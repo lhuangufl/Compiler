@@ -525,4 +525,66 @@ class ExampleLexerTests implements PLPTokenKinds {
  					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
  		}
  	}
+ 	@Test
+ 	public void test10() throws LexicalException {
+ 		String input = """
+ 				 IF N>3:
+ 				""";
+ 		IPLPLexer lexer = getLexer(input);
+ 		{
+ 			IPLPToken token = lexer.nextToken();
+ 			show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 			Kind kind = token.getKind();
+ 			assertEquals(kind, Kind.KW_IF);
+ 			int line = token.getLine();
+ 			assertEquals(line, 1);
+ 			int charPositionInLine = token.getCharPositionInLine();
+ 			assertEquals(charPositionInLine, 1);
+ 		}
+ 		{
+ 			IPLPToken token = lexer.nextToken();
+ 			show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 			Kind kind = token.getKind();
+ 			assertEquals(kind, Kind.IDENTIFIER);
+ 			int line = token.getLine();
+ 			assertEquals(line, 1);
+ 			int charPositionInLine = token.getCharPositionInLine();
+ 			assertEquals(charPositionInLine, 4);
+ 		}
+ 		{
+ 			IPLPToken token = lexer.nextToken();
+ 			show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 			Kind kind = token.getKind();
+ 			assertEquals(kind, Kind.GT);
+ 			int line = token.getLine();
+ 			assertEquals(line, 1);
+ 			int charPositionInLine = token.getCharPositionInLine();
+ 			assertEquals(charPositionInLine, 5);
+ 		}
+ 		{
+ 			IPLPToken token = lexer.nextToken();
+ 			show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 			Kind kind = token.getKind();
+ 			assertEquals(kind, Kind.INT_LITERAL);
+ 			int line = token.getLine();
+ 			assertEquals(line, 1);
+ 			int charPositionInLine = token.getCharPositionInLine();
+ 			assertEquals(charPositionInLine, 6);
+ 		}
+ 		{
+ 			IPLPToken token = lexer.nextToken();
+ 			show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 			Kind kind = token.getKind();
+ 			assertEquals(kind, Kind.COLON);
+ 			int line = token.getLine();
+ 			assertEquals(line, 1);
+ 			int charPositionInLine = token.getCharPositionInLine();
+ 			assertEquals(charPositionInLine, 7);
+ 		}
+ 	}
  }
