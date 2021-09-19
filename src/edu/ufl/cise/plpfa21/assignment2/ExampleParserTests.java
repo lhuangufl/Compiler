@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import edu.ufl.cise.plpfa21.assignment1.CompilerComponentFactory;
 
 
 class ExampleParserTests {
@@ -50,48 +49,45 @@ class ExampleParserTests {
 	}
 	
 
-		@Test public void test1() {
+	@Test public void test1() {
 		String input = """
 		VAL a: INT = 0;
 		""";
 		noErrorParse(input);
-		}
+	}
 
 
-		@Test public void test2() {
+	@Test public void test2() {
 		String input = """
 		VAL a: STRING = "hello";
 		""";
 		noErrorParse(input);
-		}
+	}
 
 
-		@Test public void test3() {
+	@Test public void test3() {
 		String input = """
 		VAL b: BOOLEAN = TRUE;
 		""";
 		noErrorParse(input);
-		}
+	}
 
 
-		@Test public void test4() {
+	@Test public void test4() {
 		String input = """
 		VAR b: LIST[];
 		""";
 		noErrorParse(input);
-		}
+	}
 
-       //This input has a syntax error at line 2, position 19.
-		@Test public void test5()  {
+   //This input has a syntax error at line 2, position 19.
+	@Test public void test5()  {
 		String input = """
 		FUN func() DO
 		WHILE x>0 DO x=x-1 END
 		END
 		""";
 		syntaxErrorParse(input,2,19);
-		}
-
-
-	
+	}
 
 }

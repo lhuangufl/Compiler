@@ -183,6 +183,27 @@ public class CompilerComponentFactory {
 			return token;
 		}
 	}
+	
+	public static class IPLPParser1 implements IPLPParser {
+
+		@Override
+		public void parse() throws Exception {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
+	@SuppressWarnings("unused")
+	public static IPLPParser getParser(String input) {
+		IPLPLexer lexer = getLexer(input);
+		try {
+			if (lexer.nextToken() == null) 
+			return null;
+		} catch (SyntaxException e) {
+			
+		}
+	}
 
 	static IPLPLexer getLexer(String input) {
 		//TODO  create and return a Lexer instance to parse the given input.
@@ -332,6 +353,7 @@ public class CompilerComponentFactory {
 		}
 		return lexer;
 	}
+
 }
 
 
