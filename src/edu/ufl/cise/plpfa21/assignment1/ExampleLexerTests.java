@@ -11,7 +11,7 @@ class ExampleLexerTests implements PLPTokenKinds {
 		return CompilerComponentFactory.getLexer(input);
 	}
 	//********************************
-	boolean doPrint = false;
+	boolean doPrint = true;
 	private void show(Object input) {
         if(doPrint) {
             System.out.println(input.toString());
@@ -587,4 +587,51 @@ class ExampleLexerTests implements PLPTokenKinds {
  			assertEquals(charPositionInLine, 7);
  		}
  	}
+	@Test
+	public void test11() throws LexicalException {
+	 	String input = """
+	 			" this is a string "
+	 			""";
+	 	IPLPLexer lexer = getLexer(input);
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.EOF);
+	 	}
+	 }
+	@Test
+	public void test12() throws LexicalException {
+	 	String input = """
+	 			abc def \r\n 
+	 			""";
+	 	IPLPLexer lexer = getLexer(input);
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.IDENTIFIER);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.IDENTIFIER);
+	 	}
+	 	{
+	 		assertThrows(LexicalException.class, () -> {
+	 			@SuppressWarnings("unused")
+	 			IPLPToken token = lexer.nextToken();
+	 		});
+	 	}
+	 	{
+	 		assertThrows(LexicalException.class, () -> {
+	 			@SuppressWarnings("unused")
+	 			IPLPToken token = lexer.nextToken();
+	 		});
+	 	}
+	 }
  }

@@ -6,6 +6,8 @@ import java.util.HashMap;
 
 
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
+import edu.ufl.cise.plpfa21.assignment2.IPLPParser;
+import edu.ufl.cise.plpfa21.assignment2.SyntaxException;
 
 
 
@@ -150,9 +152,8 @@ public class CompilerComponentFactory {
 
 
 	public static class IPLPLexer1 implements IPLPLexer {
-		int outputSeq = 0;
-		public ArrayList<Token> tokens = new ArrayList<Token>();
-
+		private int outputSeq = 0;
+		private ArrayList<Token> tokens = new ArrayList<Token>();
 		@Override
 		public IPLPToken nextToken() throws LexicalException {
 			Token token = tokens.get(outputSeq++);
@@ -183,15 +184,256 @@ public class CompilerComponentFactory {
 			return token;
 		}
 	}
+	
+	public static class IPLPParser1 implements IPLPParser {
+		private int outputSeq;
+		private ArrayList<Token> tokens = new ArrayList<Token>();
+		Token token;
+		public IPLPParser1(ArrayList<Token> tokens) {
+			this.tokens = tokens;
+			this.outputSeq = 0;
+			this.token = tokens.get(outputSeq++);
+		}
+		@Override
+		public void parse() throws Exception {
+			show(token.getKind());
+			while (token.getKind() != Kind.EOF) {
+				switch (token.getKind()) {
+				case KW_VAR -> {
+					consume();
+					nameDef();				show("nameDef();");
+					switch (token.getKind()) {
+					case SEMI -> {
+						match(Kind.SEMI); }
+					case ASSIGN -> {
+						expression();
+						match(Kind.SEMI);
+					}
+					default -> throw new SyntaxException("Expected = or ;", token.line, token.posInLine);
+					}
+					parse();
+				}
+				case KW_VAL -> {
+					consume();
+					nameDef();
+					match(Kind.ASSIGN);		show("match(Kind.ASSIGN);");
+					expression();
+					match(Kind.SEMI);
+					parse();
+				}
+				case KW_FUN -> {
+					consume(); 				show("consume()");
+					match(Kind.IDENTIFIER); show("match(Kind.IDENTIFIER);");
+					match(Kind.LPAREN);		show("match(Kind.LPAREN);");
+					nameDefList();			show("nameDefList();");
+					match(Kind.RPAREN);		show("match(Kind.RPAREN);");
+					if (token.getKind()==Kind.LPAREN) {consume(); match(Kind.COLON); type(); match(Kind.RPAREN);}
+					match(Kind.KW_DO);		show("match(Kind.KW_DO);");
+					block();				show("block()");
+					match(Kind.KW_END);		show("match(Kind.KW_END);");
+					parse();
+				}
+				default -> {}
+				}
+			}
+		}
 
-	static IPLPLexer getLexer(String input) {
+		void block() throws SyntaxException {
+			if (token.getKind() == Kind.EOF)  return;
+			if (token.getKind() == Kind.KW_END)  return;
+			statement();
+			block();
+		}
+		
+		void statement() throws SyntaxException {
+			switch(token.getKind()) {
+			case KW_RETURN -> {
+				consume(); 
+				expression(); 
+				match(Kind.SEMI);}
+			case KW_WHILE, 
+				KW_IF -> {
+				consume(); 			show("after expression -> " + token.getText());
+				expression(); 		show("after expression -> " + token.getText());
+				match(Kind.KW_DO); 	show("after DO -> " + token.getText()); 
+				block(); 			show("after expression -> " + token.getText());
+				match(Kind.KW_END);}
+			case KW_LET -> {
+				consume(); nameDef();
+				if (token.getKind()==Kind.ASSIGN) {consume(); expression();}
+				match(Kind.SEMI);
+				}
+			case KW_SWITCH -> {
+				consume(); 
+				expression();
+				while (token.getKind()==Kind.KW_CASE) {consume(); expression(); match(Kind.COLON); block();}
+				match(Kind.KW_DEFAULT); 
+				block(); 
+				match(Kind.KW_END);
+				}
+			case EOF -> {}
+			default -> { 
+				expression(); 		show("after expression IN DEFAULT -> " + token.getText() + " " + token.getKind());
+				if (token.getKind()==Kind.ASSIGN) {
+					consume(); expression();
+					show("after IF match in Default -> " + token.getText() + " " + token.getKind());} 
+				match(Kind.SEMI); 	show("after COMMA match in Default -> " + token.getText() + " " + token.getKind());
+				}
+			}
+		}
+		
+		void expression() throws SyntaxException {
+			logicalExpression();
+			return;
+		}
+		
+		void logicalExpression() throws SyntaxException {
+			comparisonExpression();
+			if (token.getKind()==Kind.OR || 
+					token.getKind()==Kind.AND) {
+				consume();
+				logicalExpression();
+			}
+			return;
+		}
+		
+		void comparisonExpression() throws SyntaxException {
+			additiveExpression();
+			if (token.getKind()==Kind.GT || 
+					token.getKind()==Kind.LT ||
+					token.getKind()==Kind.EQUALS ||
+					token.getKind()==Kind.NOT_EQUALS) {
+				consume();
+				comparisonExpression();
+			}
+			return;
+		}
+		
+		void additiveExpression() throws SyntaxException {
+			multiplicativeExpression();
+			if (token.getKind()==Kind.PLUS || 
+					token.getKind()==Kind.MINUS) {
+				consume();
+				additiveExpression();
+			}
+			return;
+		}
+		
+		void multiplicativeExpression() throws SyntaxException {
+			unaryExpression();
+			if (token.getKind()==Kind.TIMES ||
+					token.getKind()==Kind.DIV) {
+				multiplicativeExpression();
+			}
+			return;
+		}
+		
+		void unaryExpression() throws SyntaxException {
+			if (token.getKind()==Kind.BANG || 
+					token.getKind()==Kind.MINUS)
+				consume();
+			primaryExpression();
+		}
+		
+		void primaryExpression() throws SyntaxException {
+			switch (token.getKind()) {
+			case INT_LITERAL, 
+				STRING_LITERAL, 
+				KW_TRUE, 
+				KW_FALSE, 
+				KW_BOOLEAN, 
+				KW_NIL -> consume();
+			case LPAREN -> {consume(); expression(); match(Kind.RPAREN);}
+			case IDENTIFIER -> {
+				consume();
+				switch (token.getKind()) {
+				case LPAREN ->	{
+					consume(); 
+					if (token.getKind()!=Kind.RPAREN) 
+						{expression(); match(Kind.RPAREN);}
+					}
+				case LSQUARE -> {consume(); expression(); match(Kind.RSQUARE);}
+				default -> {}
+				}
+			}
+			default -> throw new IllegalArgumentException("Unexpected value: " + token.getKind());
+			}
+			return;
+		}
+		
+		void nameDefList() throws SyntaxException {
+			switch (token.getKind()) {
+			case RPAREN -> {return;}
+			case IDENTIFIER -> {
+				nameDef();
+				if (token.getKind()==Kind.COMMA) {consume(); nameDefList();}
+			}
+			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
+			}
+		}
+		
+		void nameDef() throws SyntaxException {
+			try {
+				match(Kind.IDENTIFIER);
+			} catch (SyntaxException e) {
+				throw e;
+			}
+			if (token.getKind() == Kind.COLON) {
+				consume();
+				type(); }
+			return;
+		}
+		
+		void type() throws SyntaxException {
+			switch (token.getKind()) {
+			case RSQUARE -> {return;}
+			case KW_INT, 
+				KW_STRING,
+				KW_BOOLEAN -> { consume(); return;}
+			case KW_LIST -> {
+				match(Kind.KW_LIST);
+				match(Kind.LSQUARE);
+				type();
+				match(Kind.RSQUARE);
+				}
+			case EOF -> throw new SyntaxException("Unexpected EOF: ", token.line, token.posInLine);
+			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
+			}
+			return;
+		}
+
+		void match(Kind kind) throws SyntaxException {
+			if (token.getKind() == kind) {
+				token = tokens.get(outputSeq++);
+				return;
+			}
+			throw new SyntaxException("saw " + token.kind + "expected " + kind, token.line, token.posInLine);
+		}
+		
+		private void consume() throws SyntaxException {
+			if(outputSeq < tokens.size())
+				token = tokens.get(outputSeq++);
+			else
+				throw new SyntaxException("[ERROR] No more tokens found", token.line, token.posInLine);
+		}
+	}
+	
+	@SuppressWarnings("unused")
+	public static IPLPParser1 getParser(String input) {
+		show("I'm getting parser");
+		IPLPLexer1 lexer = getLexer(input);
+
+		IPLPParser1 parser = new IPLPParser1(lexer.tokens);
+		show("I'm returning a parser");
+		return parser;
+	}
+	
+
+
+	static IPLPLexer1 getLexer(String input) {
 		//TODO  create and return a Lexer instance to parse the given input.
 		int numChars = input.length();
 		char[] chars = Arrays.copyOf(input.toCharArray(), numChars+1);
-		//**************************
-		show(Arrays.toString(chars));
-		show("The array length:" + chars.length);
-		//**************************
 		chars[numChars] = EOFchar;
 		populate_reservedWords();
 		IPLPLexer1 lexer = new IPLPLexer1();
@@ -208,14 +450,17 @@ public class CompilerComponentFactory {
 			case START -> {
 				ch = chars[pos];
 				switch(ch) {
-				case '\"', '\'' -> {
-					state = State.STRING_LITERAL; pos++; posInLine++; }
-				case '\b','\t','\r','\f','\\', ' ' -> {
-					pos++; posInLine++; }
-				case '\n' -> {
-					line++;
-					posInLine = 0;
-					pos++; }
+				case '\n' -> { line++; posInLine = 0; pos++; }
+				case '\"', 
+					'\'' -> 
+					{ state = State.STRING_LITERAL; pos++; posInLine++; }
+				case '\b',
+					'\t',
+					'\r',
+					'\f',
+					'\\', 
+					' ' -> 
+					{ pos++; posInLine++; }
 				case '('->
 					{ lexer.tokens.add(new Token(String.valueOf(ch), Kind.LPAREN, pos, 1, line, posInLine)); pos++; posInLine++;  }
 				case ')'->
@@ -258,7 +503,8 @@ public class CompilerComponentFactory {
 						posInLine = posInLine+2;
 					} else { lexer.tokens.add(new Token(String.valueOf(ch), Kind.ASSIGN, pos, 1, line, posInLine)); pos++; posInLine++; }
 				}
-				case '&', '|'-> {
+				case '&', 
+					'|'-> {
 					if (chars[pos+1] == '&') {
 						lexer.tokens.add(new Token("&&", Kind.AND, pos, 2, line, posInLine));
 						pos = pos+2;
@@ -306,7 +552,7 @@ public class CompilerComponentFactory {
 				while (pos<chars.length && Character.isDigit(chars[pos]) && chars[pos]!= EOFchar) {
 					length++; pos++; posInLine++; }
 				show("INT LITERAL-> " + new String(chars, pos-length, length) + "  pos->" + pos);
-				lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.INT_LITERAL, pos-length, length, line, posInLine-length));
+				lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.INT_LITERAL, pos-length, length, line, posInLine-length-1));
 				length = 0;
 			}
 			case STRING_LITERAL -> {
@@ -314,13 +560,13 @@ public class CompilerComponentFactory {
 				while (chars[pos] != chars[pos-length-1] && chars[pos] != EOFchar && chars[pos] !='\\') {
 					pos++; posInLine++; length++;}
 				if (chars[pos]==EOFchar)
-					lexer.tokens.add(new Token(String.valueOf(chars[pos-length]), Kind.STRING_LITERAL, -404, length, line, posInLine-length));
+					lexer.tokens.add(new Token(String.valueOf(chars[pos-length]), Kind.STRING_LITERAL, -404, length, line, posInLine-length-1));
 				else if (chars[pos]=='\\') {
 					while (chars[pos] != chars[pos-length-1] && chars[pos] != EOFchar) {pos++; posInLine++; length++;}
-					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, -505, length, line, posInLine-length));
+					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, -505, length, line, posInLine-length-1));
 				}
 				else {
-					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, pos, length, line, posInLine-length));
+					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, pos, length, line, posInLine-length-1));
 				}
 				pos++; posInLine++;
 				length = 0;
@@ -332,6 +578,7 @@ public class CompilerComponentFactory {
 		}
 		return lexer;
 	}
+
 }
 
 

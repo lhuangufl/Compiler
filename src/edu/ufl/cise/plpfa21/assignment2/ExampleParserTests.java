@@ -7,15 +7,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import edu.ufl.cise.plpfa21.assignment1.CompilerComponentFactory;
 
 
 class ExampleParserTests {
 	
-	static boolean VERBOSE = true;
+	static boolean VERBOSE = false;
+	
+	static boolean doPrint = true;
+	@SuppressWarnings("unused")
+	private static void show(Object input) {
+        if(doPrint) {
+            System.out.println(input.toString());
+        }
+    }
 	
 	void noErrorParse(String input)  {
-		IPLPParser parser = CompilerComponentFactory.getParser(input);
+		show("**********Let's scan an input***********");
+		IPLPParser parser = CompilerComponentFactory.getParser(input); 
+		show("finish scanning; got a parser");
 		try {
+			show("Let's parse");
 			parser.parse();
 		} catch (Throwable e) {
 			throw new RuntimeException(e); 
@@ -39,17 +51,18 @@ class ExampleParserTests {
 		
 	}
 
-	
-
-	@Test public void test0() {
+	@Test 
+	public void test0() {
 		String input = """
 
 		""";
+		
 		noErrorParse(input);
 	}
 	
 
-	@Test public void test1() {
+	@Test 
+	public void test1() {
 		String input = """
 		VAL a: INT = 0;
 		""";
@@ -57,7 +70,8 @@ class ExampleParserTests {
 	}
 
 
-	@Test public void test2() {
+	@Test 
+	public void test2() {
 		String input = """
 		VAL a: STRING = "hello";
 		""";
@@ -65,15 +79,18 @@ class ExampleParserTests {
 	}
 
 
-	@Test public void test3() {
+	@Test 
+	public void test3() {
 		String input = """
 		VAL b: BOOLEAN = TRUE;
+		VAR x: LIST[];
 		""";
 		noErrorParse(input);
 	}
 
 
-	@Test public void test4() {
+	@Test 
+	public void test4() {
 		String input = """
 		VAR b: LIST[];
 		""";
@@ -82,12 +99,22 @@ class ExampleParserTests {
 
    //This input has a syntax error at line 2, position 19.
 	@Test public void test5()  {
-		String input = """
+	String input = """
 		FUN func() DO
 		WHILE x>0 DO x=x-1 END
 		END
 		""";
 		syntaxErrorParse(input,2,19);
 	}
-
+	@Test 
+	public void test7() {
+		String input = """
+		VAR a: LIST[BOOLEAN];
+		FUN func() DO
+		WHILE x>0 DO Y=x-1; END
+		END
+		VAL b: INT = 1099893-2;
+		""";
+		noErrorParse(input);
+	}
 }
