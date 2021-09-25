@@ -42,6 +42,7 @@ class ExampleParserTests {
 			parser.parse();
 			}
 			catch(SyntaxException e) {
+				show(e);
 				if (VERBOSE) System.out.println(input + '\n' + e.getMessage());
 				Assertions.assertEquals(line, e.line);
 				Assertions.assertEquals(column, e.column);
@@ -114,6 +115,65 @@ class ExampleParserTests {
 		WHILE x>0 DO Y=x-1; END
 		END
 		VAL b: INT = 1099893-2;
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test8() {
+		String input = """
+		VAR a LIST[BOOLEAN];
+		FUN func() DO
+		WHILE x>0 DO Y=x-1; END
+		END
+		VAL b: INT = 1099893-2;
+		""";
+		syntaxErrorParse(input,1,6);
+	}
+	@Test 
+	public void test9() {
+		String input = """
+		VAR a : LIST[BOOLEAN];
+		FUN func() DO
+		WHILE x>0 DO Y=x-1; 
+		s=p*1; END
+		END
+		VAL b: INT = 1099893-2;
+		""";
+		noErrorParse(input);
+	}
+	
+	@Test 
+	public void test10() {
+		String input = """
+		VAR a : LIST[BOOLEAN] = !B*3+455*-(X+MM);
+		FUN func(WO : INT, NI: BOOLEAN, TA: STRING) DO
+		LET x=PP+1;
+		IF !NI&&TRUE||-FALSE&&a==1||a<d  DO Y=x-1; 
+		s=p*1; FUNC(A,3,65,DFD); FAEE[D]; RETURN X+1;TA ="DS"; END
+		END    /*DDFD++1DFATJAOSDJHT**/
+		VAL b: INT = 9;
+		
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test11() {
+		String input = """
+		VAR a : LIST[] = !B*3+455*-(X+MM);
+		FUN func(WO : INT, NI: BOOLEAN, TA: STRING) DO
+		LET x:LIST[LIST[LIST[]]]  =PP+1;
+		SWITCH (DK)
+		CASE 1: I="EDF";i=u/3;
+		CASE A: a = 1+3*3;
+		DEFAULT END
+		END
+		""";
+		noErrorParse(input);
+	}
+	@Test
+	public void test12() {
+		String input = """
+		
 		""";
 		noErrorParse(input);
 	}

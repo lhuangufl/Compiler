@@ -16,7 +16,7 @@ public class CompilerComponentFactory {
 	static final char EOFchar = 0;
 
 	//********************************
-	static boolean doPrint = false;
+	static boolean doPrint = true;
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
         if(doPrint) {
@@ -31,8 +31,7 @@ public class CompilerComponentFactory {
 		public final int line;
 		public final String text;
 		public final int posInLine;
-		private StringBuilder stringBuilder = new StringBuilder();
-		public int length;
+		public final int length;
 
 		public Token(String text, Kind kind, int pos, int length, int line, int posInLine) {
 			this.text = text;
@@ -48,10 +47,30 @@ public class CompilerComponentFactory {
 			// TODO Auto-generated method stub
 			return this.kind;
 		}
-
+		/**
+		 * Returns the actual text of token.
+		 * 
+		 * For string literals, this includes the delimiters and unprocessed escape sequences.
+		 * For example, the text corresponding to this token "abc\'"  would have 7 characters.
+		 * 
+		 * @return text of token
+		 */
 		@Override
 		public String getText() {
+			StringBuilder stringBuilder = new StringBuilder();
 			// TODO Auto-generated method stub
+			if (this.kind==Kind.STRING_LITERAL) {
+				populate_escapeSeqs();
+				char[] chars = Arrays.copyOf(this.text.toCharArray(), length+2);
+				stringBuilder.append(chars[0]);
+				for (char ch : Arrays.copyOfRange(chars, 1, length+1)) {
+					if (escapeSeqs.containsKey(ch)) 
+						stringBuilder.append(escapeSeqs.get(ch));
+					else stringBuilder.append(ch);
+				}
+				stringBuilder.append(chars[length+1]);
+				return stringBuilder.toString();
+			}
 			return this.text;
 		}
 
@@ -66,25 +85,25 @@ public class CompilerComponentFactory {
 			// TODO Auto-generated method stub
 			return this.posInLine;
 		}
-
+		/**
+		 * This routine is only defined for string literals, i.e. kind = STRING_LITERAL
+		 * It returns a String representing the token after stripping delimiters and handling escape sequences.
+		 * For example, the string value of the token with text "abc\'" would have four characters, abc'
+		 * 
+		 * @return the string value of this token
+		 */
 		@Override
 		public String getStringValue() {
 			// TODO Auto-generated method stub
-			int i = 0;
-			length = this.text.length();
-			while (i<length)
-				switch (this.text.charAt(i)) {
-					case '\b', '\n', '\t','\r','\f','\\', ' '-> {i++;}
-					case ',', ';', ':'-> {i++;}
-					default -> {stringBuilder.append(this.text.charAt(i++));}
-				}
-			return this.stringBuilder.toString();
+			return this.text.substring(1, length+1);
 		}
 
 		@Override
 		public int getIntValue() {
 			return Integer.parseInt(this.text);
 		}
+		
+
 
 	}
 	public static HashMap<String, Kind> reservedWords = new HashMap<>();
@@ -130,14 +149,14 @@ public class CompilerComponentFactory {
 
 	public static HashMap<Character, String> escapeSeqs = new HashMap<Character, String>();
 	public static void populate_escapeSeqs() {
-		escapeSeqs.put('\b', null);
-		escapeSeqs.put('\t', null);
-		escapeSeqs.put('\n', null);
-		escapeSeqs.put('\r', null);
-		escapeSeqs.put('\f', null);
-		escapeSeqs.put('\"', null);
-		escapeSeqs.put('\'', null);
-		escapeSeqs.put('\\', null);
+		escapeSeqs.put('\b', "\\b");
+		escapeSeqs.put('\t', "\\t");
+		escapeSeqs.put('\n', "\\n");
+		escapeSeqs.put('\r', "\\r");
+		escapeSeqs.put('\f', "\\f");
+		escapeSeqs.put('\"', "\\\"");
+		escapeSeqs.put('\'', "\\\'");
+		escapeSeqs.put('\\', "\\\\");
 	}
 
 //	public static Set<Character> escapeSeqSet = new HashSet<Character>();
@@ -167,7 +186,7 @@ public class CompilerComponentFactory {
 				switch (token.pos) {
 				case -404 -> {
 					show("Error Code 404...");
-					throw new LexicalException("Missing \": " + token.getText(), token.line, token.posInLine); }
+					throw new LexicalException("Missing Another String Delimiter: " + token.getText(), token.line, token.posInLine); }
 				case -505 -> {
 					show("Error Code 505...");
 					throw new LexicalException("Illegal Symbol \\: " + token.getText(), token.line, token.posInLine); }
@@ -196,16 +215,16 @@ public class CompilerComponentFactory {
 		}
 		@Override
 		public void parse() throws Exception {
-			show(token.getKind());
 			while (token.getKind() != Kind.EOF) {
 				switch (token.getKind()) {
 				case KW_VAR -> {
 					consume();
-					nameDef();				show("nameDef();");
+					nameDef();				show("In case of KW_VAR nameDef() OK!");
 					switch (token.getKind()) {
 					case SEMI -> {
 						match(Kind.SEMI); }
 					case ASSIGN -> {
+						consume();
 						expression();
 						match(Kind.SEMI);
 					}
@@ -216,31 +235,31 @@ public class CompilerComponentFactory {
 				case KW_VAL -> {
 					consume();
 					nameDef();
-					match(Kind.ASSIGN);		show("match(Kind.ASSIGN);");
+					match(Kind.ASSIGN);		show("In case of KW_VAL, match(Kind.ASSIGN); OK!");
 					expression();
 					match(Kind.SEMI);
 					parse();
 				}
 				case KW_FUN -> {
-					consume(); 				show("consume()");
-					match(Kind.IDENTIFIER); show("match(Kind.IDENTIFIER);");
-					match(Kind.LPAREN);		show("match(Kind.LPAREN);");
-					nameDefList();			show("nameDefList();");
-					match(Kind.RPAREN);		show("match(Kind.RPAREN);");
+					consume(); 
+					match(Kind.IDENTIFIER); show("In case of KW_FUN, match(Kind.IDENTIFIER); OK");
+					match(Kind.LPAREN);		show("In case of KW_FUN, match(Kind.LPAREN); OK!");
+					nameDefList();			show("In case of KW_FUN, nameDefList(); OK!");
+					match(Kind.RPAREN);		show("In case of KW_FUN, match(Kind.RPAREN);");
 					if (token.getKind()==Kind.LPAREN) {consume(); match(Kind.COLON); type(); match(Kind.RPAREN);}
-					match(Kind.KW_DO);		show("match(Kind.KW_DO);");
-					block();				show("block()");
-					match(Kind.KW_END);		show("match(Kind.KW_END);");
+					match(Kind.KW_DO);		show("In case of KW_FUN, match(Kind.KW_DO); OK!");
+					block();				show("In case of KW_FUN, block() OK!");
+					match(Kind.KW_END);		show("In case of KW_FUN, match(Kind.KW_END); OK!");
 					parse();
 				}
-				default -> {}
+				default -> throw new SyntaxException("Expected Kind (VAR, VAL, FUN); But Kind is " + 
+				token.getKind(), token.line, token.posInLine);
 				}
 			}
 		}
 
 		void block() throws SyntaxException {
-			if (token.getKind() == Kind.EOF)  return;
-			if (token.getKind() == Kind.KW_END)  return;
+			if (token.getKind()==Kind.KW_END || token.getKind()==Kind.EOF) return;
 			statement();
 			block();
 		}
@@ -253,31 +272,40 @@ public class CompilerComponentFactory {
 				match(Kind.SEMI);}
 			case KW_WHILE, 
 				KW_IF -> {
-				consume(); 			show("after expression -> " + token.getText());
-				expression(); 		show("after expression -> " + token.getText());
-				match(Kind.KW_DO); 	show("after DO -> " + token.getText()); 
-				block(); 			show("after expression -> " + token.getText());
+				consume(); 
+				expression(); 		show("expression() OK! ");
+				match(Kind.KW_DO); 	show("match(Kind.KW_DO) OK!"); 
+				block(); 			show("block() OK!");
 				match(Kind.KW_END);}
 			case KW_LET -> {
-				consume(); nameDef();
+				consume(); 
+				nameDef();			show("In case of KW_LET, nameDef() ok! Next Kind -> " + token.getKind());
 				if (token.getKind()==Kind.ASSIGN) {consume(); expression();}
 				match(Kind.SEMI);
 				}
 			case KW_SWITCH -> {
-				consume(); 
+				consume(); 	
 				expression();
-				while (token.getKind()==Kind.KW_CASE) {consume(); expression(); match(Kind.COLON); block();}
+				while (token.getKind()==Kind.KW_CASE) {
+					consume(); 
+					expression(); 
+					match(Kind.COLON);
+					while (token.getKind()!=Kind.KW_CASE&&token.getKind()!=Kind.KW_DEFAULT)
+						statement();
+					}
 				match(Kind.KW_DEFAULT); 
 				block(); 
 				match(Kind.KW_END);
 				}
-			case EOF -> {}
+			case EOF, KW_END -> {return;}
 			default -> { 
-				expression(); 		show("after expression IN DEFAULT -> " + token.getText() + " " + token.getKind());
+				expression(); 
 				if (token.getKind()==Kind.ASSIGN) {
-					consume(); expression();
-					show("after IF match in Default -> " + token.getText() + " " + token.getKind());} 
-				match(Kind.SEMI); 	show("after COMMA match in Default -> " + token.getText() + " " + token.getKind());
+					consume(); 
+					expression();
+					} 
+				match(Kind.SEMI); 
+				return;
 				}
 			}
 		}
@@ -323,6 +351,7 @@ public class CompilerComponentFactory {
 			unaryExpression();
 			if (token.getKind()==Kind.TIMES ||
 					token.getKind()==Kind.DIV) {
+				consume();
 				multiplicativeExpression();
 			}
 			return;
@@ -343,17 +372,27 @@ public class CompilerComponentFactory {
 				KW_FALSE, 
 				KW_BOOLEAN, 
 				KW_NIL -> consume();
-			case LPAREN -> {consume(); expression(); match(Kind.RPAREN);}
+			case LPAREN -> {
+				consume(); 
+				expression(); 
+				match(Kind.RPAREN);
+				}
 			case IDENTIFIER -> {
 				consume();
 				switch (token.getKind()) {
 				case LPAREN ->	{
 					consume(); 
-					if (token.getKind()!=Kind.RPAREN) 
-						{expression(); match(Kind.RPAREN);}
+					if (token.getKind()!=Kind.RPAREN) {
+						expression();
+						while (token.getKind()==Kind.COMMA) {
+							consume(); 
+							expression();
+							}
+					}	
+					match(Kind.RPAREN);
 					}
 				case LSQUARE -> {consume(); expression(); match(Kind.RSQUARE);}
-				default -> {}
+				default -> {return;}
 				}
 			}
 			default -> throw new IllegalArgumentException("Unexpected value: " + token.getKind());
@@ -366,8 +405,11 @@ public class CompilerComponentFactory {
 			case RPAREN -> {return;}
 			case IDENTIFIER -> {
 				nameDef();
-				if (token.getKind()==Kind.COMMA) {consume(); nameDefList();}
-			}
+				if (token.getKind()==Kind.COMMA) {
+					consume(); 
+					nameDefList();
+					}
+				}
 			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
 			}
 		}
@@ -380,23 +422,26 @@ public class CompilerComponentFactory {
 			}
 			if (token.getKind() == Kind.COLON) {
 				consume();
-				type(); }
+				type(); 
+			}
 			return;
 		}
 		
 		void type() throws SyntaxException {
 			switch (token.getKind()) {
-			case RSQUARE -> {return;}
 			case KW_INT, 
 				KW_STRING,
-				KW_BOOLEAN -> { consume(); return;}
+				KW_BOOLEAN -> { 
+					consume(); 
+					return;
+				}
 			case KW_LIST -> {
-				match(Kind.KW_LIST);
+				consume();
 				match(Kind.LSQUARE);
-				type();
+				if (token.getKind() != Kind.RSQUARE) 
+					{type();show("sdfs   " + token.getKind());}
 				match(Kind.RSQUARE);
 				}
-			case EOF -> throw new SyntaxException("Unexpected EOF: ", token.line, token.posInLine);
 			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
 			}
 			return;
@@ -411,6 +456,8 @@ public class CompilerComponentFactory {
 		}
 		
 		private void consume() throws SyntaxException {
+	 		show("TO BE COMSUMED :: Kind:" + token.getKind() + " line:" + token.getLine() +
+					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
 			if(outputSeq < tokens.size())
 				token = tokens.get(outputSeq++);
 			else
@@ -420,11 +467,8 @@ public class CompilerComponentFactory {
 	
 	@SuppressWarnings("unused")
 	public static IPLPParser1 getParser(String input) {
-		show("I'm getting parser");
 		IPLPLexer1 lexer = getLexer(input);
-
 		IPLPParser1 parser = new IPLPParser1(lexer.tokens);
-		show("I'm returning a parser");
 		return parser;
 	}
 	
@@ -450,7 +494,8 @@ public class CompilerComponentFactory {
 			case START -> {
 				ch = chars[pos];
 				switch(ch) {
-				case '\n' -> { line++; posInLine = 0; pos++; }
+				case '\n' -> 
+					{ line++; posInLine = 0; pos++; }
 				case '\"', 
 					'\'' -> 
 					{ state = State.STRING_LITERAL; pos++; posInLine++; }
@@ -489,12 +534,13 @@ public class CompilerComponentFactory {
 					if (chars[pos+1] == '*') {
 						pos++;
 						posInLine++;
-						while (pos<chars.length && chars[pos]!= EOFchar && (chars[pos] != '*' || chars[pos] == '*' && chars[pos+1] != '/')) {
-							pos++; posInLine++; }
-						if (chars[pos] == EOFchar)
-							lexer.tokens.add(new Token("*/", Kind.STRING_LITERAL, -606, 1, line, posInLine)); //Missing a symbol of '*/'
-						else if (chars[pos] == '*' && chars[pos+1] == '/') {pos = pos+2; posInLine= posInLine+2;}
-					} else { lexer.tokens.add(new Token(String.valueOf(ch), Kind.DIV, pos, 1, line, posInLine)); pos++; posInLine++; }
+						while (pos<chars.length && chars[pos]!= EOFchar && (chars[pos] != '*' || 
+								chars[pos] == '*' && chars[pos+1] != '/')) 
+							{ pos++; posInLine++; }
+						if (chars[pos] == '*' && chars[pos+1] == '/') {pos = pos+2; posInLine= posInLine+2;}
+					} 
+					else { 
+						lexer.tokens.add(new Token(String.valueOf(ch), Kind.DIV, pos, 1, line, posInLine)); pos++; posInLine++; }
 				}
 				case '='-> {
 					if (chars[pos+1] == '=') {
@@ -552,7 +598,7 @@ public class CompilerComponentFactory {
 				while (pos<chars.length && Character.isDigit(chars[pos]) && chars[pos]!= EOFchar) {
 					length++; pos++; posInLine++; }
 				show("INT LITERAL-> " + new String(chars, pos-length, length) + "  pos->" + pos);
-				lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.INT_LITERAL, pos-length, length, line, posInLine-length-1));
+				lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.INT_LITERAL, pos-length, length, line, posInLine-length));
 				length = 0;
 			}
 			case STRING_LITERAL -> {
@@ -563,22 +609,21 @@ public class CompilerComponentFactory {
 					lexer.tokens.add(new Token(String.valueOf(chars[pos-length]), Kind.STRING_LITERAL, -404, length, line, posInLine-length-1));
 				else if (chars[pos]=='\\') {
 					while (chars[pos] != chars[pos-length-1] && chars[pos] != EOFchar) {pos++; posInLine++; length++;}
-					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, -505, length, line, posInLine-length-1));
+					lexer.tokens.add(new Token(new String(chars, pos-length-1, length+2), Kind.STRING_LITERAL, -505, length, line, posInLine-length-1));
 				}
 				else {
-					lexer.tokens.add(new Token(new String(chars, pos-length, length), Kind.STRING_LITERAL, pos, length, line, posInLine-length-1));
+					lexer.tokens.add(new Token(new String(chars, pos-length-1, length+2), Kind.STRING_LITERAL, pos, length, line, posInLine-length-1));
 				}
-				pos++; posInLine++;
+				pos++; 
+				posInLine++;
 				length = 0;
 			}
-
 			default ->
 				{ assert false; }
 			}
 		}
 		return lexer;
 	}
-
 }
 
 

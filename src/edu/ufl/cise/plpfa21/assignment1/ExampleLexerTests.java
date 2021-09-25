@@ -398,7 +398,7 @@ class ExampleLexerTests implements PLPTokenKinds {
  			int line = token.getLine();
  			assertEquals(line, 1);
  			int charPositionInLine = token.getCharPositionInLine();
- 			assertEquals(charPositionInLine, 1);
+ 			assertEquals(charPositionInLine, 0);
  		}
  		{
  			assertThrows(LexicalException.class, () -> {
@@ -417,7 +417,7 @@ class ExampleLexerTests implements PLPTokenKinds {
  			int line = token.getLine();
  			assertEquals(line, 3);
  			int charPositionInLine = token.getCharPositionInLine();
- 			assertEquals(charPositionInLine, 1);
+ 			assertEquals(charPositionInLine, 0);
  		}
  		{
  			IPLPToken token = lexer.nextToken();
@@ -428,10 +428,13 @@ class ExampleLexerTests implements PLPTokenKinds {
  			int line = token.getLine();
  			assertEquals(line, 4);
  			int charPositionInLine = token.getCharPositionInLine();
- 			assertEquals(charPositionInLine, 1);
+ 			assertEquals(charPositionInLine, 0);
  			String string = token.getStringValue();
  			show("String Value is ->" + string);
- 			assertEquals(string, "kdfik'");
+ 			assertEquals(string, "k;df\ni\t k\'");
+ 			String text = token.getText();
+ 			show("Text Value is ->" + text + "*Text ends");
+ 			assertEquals(text, "\"k;df\\ni\\t k\\\'\"");
  		}
  	}
  	@Test
@@ -598,13 +601,13 @@ class ExampleLexerTests implements PLPTokenKinds {
 	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
  					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
 	 		Kind kind = token.getKind();
-	 		assertEquals(kind, Kind.EOF);
+	 		assertEquals(kind, Kind.STRING_LITERAL);
 	 	}
 	 }
 	@Test
 	public void test12() throws LexicalException {
 	 	String input = """
-	 			abc def \r\n 
+	 			abc def "\ra\n "
 	 			""";
 	 	IPLPLexer lexer = getLexer(input);
 	 	{
@@ -622,16 +625,112 @@ class ExampleLexerTests implements PLPTokenKinds {
 	 		assertEquals(kind, Kind.IDENTIFIER);
 	 	}
 	 	{
-	 		assertThrows(LexicalException.class, () -> {
-	 			@SuppressWarnings("unused")
-	 			IPLPToken token = lexer.nextToken();
-	 		});
-	 	}
-	 	{
-	 		assertThrows(LexicalException.class, () -> {
-	 			@SuppressWarnings("unused")
-	 			IPLPToken token = lexer.nextToken();
-	 		});
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.IDENTIFIER);
 	 	}
 	 }
+	@Test
+	public void test36() throws LexicalException{
+		String input = """
+		"This is a multiline
+		string."
+		""";
+		try{
+		IPLPLexer lexer = getLexer(input);
+		{
+		IPLPToken token = lexer.nextToken();
+ 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+ 		Kind kind = token.getKind();
+		assertEquals(Kind.STRING_LITERAL,kind,"at "  + token.getLine() + ":" + token.getCharPositionInLine());
+		int line = token.getLine();
+		assertEquals(1,line,"line position error for token"+"This is a multiline\nstring.");
+		int charPositionInLine = token.getCharPositionInLine();
+		assertEquals(0,charPositionInLine,"char position error for token"+"This is a multiline\nstring.");
+		String text = token.getText();
+		assertEquals("\"This is a multiline\nstring.\"",text,"at "  + token.getLine() + ":" + token.getCharPositionInLine());
+		String val = token.getStringValue();
+		assertEquals("This is a multiline\nstring.",val,"at "  + token.getLine() + ":" + token.getCharPositionInLine());
+		}
+		{
+		IPLPToken token = lexer.nextToken();
+		Kind kind = token.getKind();
+		assertEquals(Kind.EOF,kind);
+		}
+		}
+			catch(LexicalException e) {
+			    System.out.println("Unexpected LexicalException:  " + e.getMessage());
+			    System.out.println("input=");
+			    System.out.println(input);
+			    System.out.println("-----------");
+			    throw e;
+		    }
+			catch(Throwable e) {
+			    System.out.println(e.getClass() + "  "  + e.getMessage());
+			    System.out.println("input=");
+			    System.out.println(input);
+			    System.out.println("-----------");
+			    throw e;
+		    }
+		}
+	@Test
+	public void test13() throws LexicalException {
+	 	String input = """
+	 			!= ==!= !=== !=3 
+	 			""";
+	 	IPLPLexer lexer = getLexer(input);
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.NOT_EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.NOT_EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.NOT_EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.NOT_EQUALS);
+	 	}
+	 	{
+	 		IPLPToken token = lexer.nextToken();
+	 		show("Kind:" + token.getKind() + " line:" + token.getLine() +
+ 					" pos:" + token.getCharPositionInLine() + " Text:" + token.getText());
+	 		Kind kind = token.getKind();
+	 		assertEquals(kind, Kind.INT_LITERAL);
+	 	}
+	 }	
+	
  }
