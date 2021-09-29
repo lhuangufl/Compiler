@@ -12,9 +12,9 @@ import edu.ufl.cise.plpfa21.assignment1.CompilerComponentFactory;
 
 class ExampleParserTests {
 	
-	static boolean VERBOSE = false;
+	static boolean VERBOSE = true;
 	
-	static boolean doPrint = true;
+	static boolean doPrint = false;
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
         if(doPrint) {
@@ -23,11 +23,8 @@ class ExampleParserTests {
     }
 	
 	void noErrorParse(String input)  {
-		show("**********Let's scan an input***********");
 		IPLPParser parser = CompilerComponentFactory.getParser(input); 
-		show("finish scanning; got a parser");
 		try {
-			show("Let's parse");
 			parser.parse();
 		} catch (Throwable e) {
 			throw new RuntimeException(e); 
@@ -114,7 +111,7 @@ class ExampleParserTests {
 		FUN func() DO
 		WHILE x>0 DO Y=x-1; END
 		END
-		VAL b: INT = 1099893-2;
+		VAL b: INT = 109989323432423999999999999423-2;
 		""";
 		noErrorParse(input);
 	}
@@ -146,13 +143,8 @@ class ExampleParserTests {
 	public void test10() {
 		String input = """
 		VAR a : LIST[BOOLEAN] = !B*3+455*-(X+MM);
-		FUN func(WO : INT, NI: BOOLEAN, TA: STRING) DO
-		LET x=PP+1;
-		IF !NI&&TRUE||-FALSE&&a==1||a<d  DO Y=x-1; 
-		s=p*1; FUNC(A,3,65,DFD); FAEE[D]; RETURN X+1;TA ="DS"; END
-		END    /*DDFD++1DFATJAOSDJHT**/
-		VAL b: INT = 9;
-		
+		FUN func(WO : INT, NI: BOOLEAN, TA: STRING) DO 
+		IF !NI&&TRUE||-FALSE&&a==1||a<d&&QQ!=0  DO END END
 		""";
 		noErrorParse(input);
 	}
@@ -160,11 +152,16 @@ class ExampleParserTests {
 	public void test11() {
 		String input = """
 		VAR a : LIST[] = !B*3+455*-(X+MM);
-		FUN func(WO : INT, NI: BOOLEAN, TA: STRING) DO
+		FUN func(WO : INT, NI: BOOLEAN, TA: STRING)   (: LIST[]) DO
 		LET x:LIST[LIST[LIST[]]]  =PP+1;
 		SWITCH (DK)
 		CASE 1: I="EDF";i=u/3;
-		CASE A: a = 1+3*3;
+		CASE A: a = (1+3)*3; A=func(a+1,b-1,c*1);
+		b = db[!lf]; /*dfdfd    
+		dfsdf*/
+		d = d+d;
+		CASE B: 	D=D1+3;
+		
 		DEFAULT END
 		END
 		""";
@@ -173,6 +170,17 @@ class ExampleParserTests {
 	@Test
 	public void test12() {
 		String input = """
+		
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test13() {
+		String input = """
+		VAR a : LIST[] = !B*3+455*-(X+MM);
+		FUN func(WO : INT, NI: BOOLEAN, TA: STRING)   (: LIST[]) DO
+		RETURN X+1*DFD;
+		END
 		
 		""";
 		noErrorParse(input);

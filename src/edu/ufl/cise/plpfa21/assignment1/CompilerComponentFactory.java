@@ -16,7 +16,7 @@ public class CompilerComponentFactory {
 	static final char EOFchar = 0;
 
 	//********************************
-	static boolean doPrint = true;
+	static boolean doPrint = false;
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
         if(doPrint) {
@@ -174,7 +174,7 @@ public class CompilerComponentFactory {
 		private int outputSeq = 0;
 		private ArrayList<Token> tokens = new ArrayList<Token>();
 		@Override
-		public IPLPToken nextToken() throws LexicalException {
+		public Token nextToken() throws LexicalException {
 			Token token = tokens.get(outputSeq++);
 			if (token.kind == Kind.INT_LITERAL)
 				try {
@@ -207,7 +207,7 @@ public class CompilerComponentFactory {
 	public static class IPLPParser1 implements IPLPParser {
 		private int outputSeq;
 		private ArrayList<Token> tokens = new ArrayList<Token>();
-		Token token;
+		private Token token;
 		public IPLPParser1(ArrayList<Token> tokens) {
 			this.tokens = tokens;
 			this.outputSeq = 0;
@@ -246,7 +246,12 @@ public class CompilerComponentFactory {
 					match(Kind.LPAREN);		show("In case of KW_FUN, match(Kind.LPAREN); OK!");
 					nameDefList();			show("In case of KW_FUN, nameDefList(); OK!");
 					match(Kind.RPAREN);		show("In case of KW_FUN, match(Kind.RPAREN);");
-					if (token.getKind()==Kind.LPAREN) {consume(); match(Kind.COLON); type(); match(Kind.RPAREN);}
+					if (token.getKind()==Kind.LPAREN) {
+						consume(); 
+						match(Kind.COLON); 
+						type(); 
+						match(Kind.RPAREN);
+						}
 					match(Kind.KW_DO);		show("In case of KW_FUN, match(Kind.KW_DO); OK!");
 					block();				show("In case of KW_FUN, block() OK!");
 					match(Kind.KW_END);		show("In case of KW_FUN, match(Kind.KW_END); OK!");
@@ -259,7 +264,9 @@ public class CompilerComponentFactory {
 		}
 
 		void block() throws SyntaxException {
-			if (token.getKind()==Kind.KW_END || token.getKind()==Kind.EOF) return;
+			if (token.getKind()==Kind.KW_END || 
+					token.getKind()==Kind.EOF) 
+				return;
 			statement();
 			block();
 		}
@@ -280,7 +287,10 @@ public class CompilerComponentFactory {
 			case KW_LET -> {
 				consume(); 
 				nameDef();			show("In case of KW_LET, nameDef() ok! Next Kind -> " + token.getKind());
-				if (token.getKind()==Kind.ASSIGN) {consume(); expression();}
+				if (token.getKind()==Kind.ASSIGN) {
+					consume(); 
+					expression();
+					}
 				match(Kind.SEMI);
 				}
 			case KW_SWITCH -> {
@@ -290,8 +300,11 @@ public class CompilerComponentFactory {
 					consume(); 
 					expression(); 
 					match(Kind.COLON);
-					while (token.getKind()!=Kind.KW_CASE&&token.getKind()!=Kind.KW_DEFAULT)
-						statement();
+					while (token.getKind()!= Kind.KW_CASE &&
+							token.getKind()!=Kind.KW_DEFAULT &&
+							token.getKind()!=Kind.KW_END && 
+							token.getKind()!=Kind.EOF)
+						{statement();			show("Case statement match OK!"); }
 					}
 				match(Kind.KW_DEFAULT); 
 				block(); 
@@ -467,8 +480,16 @@ public class CompilerComponentFactory {
 	
 	@SuppressWarnings("unused")
 	public static IPLPParser1 getParser(String input) {
+		ArrayList<Token> tokens = new ArrayList<Token>();
 		IPLPLexer1 lexer = getLexer(input);
-		IPLPParser1 parser = new IPLPParser1(lexer.tokens);
+		while (lexer.outputSeq < lexer.tokens.size())
+			try {
+				tokens.add(lexer.nextToken());
+			} catch (LexicalException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		IPLPParser1 parser = new IPLPParser1(tokens);
 		return parser;
 	}
 	

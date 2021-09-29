@@ -607,7 +607,7 @@ class ExampleLexerTests implements PLPTokenKinds {
 	@Test
 	public void test12() throws LexicalException {
 	 	String input = """
-	 			abc def "\ra\n "
+	 			abc def \ra\n 
 	 			""";
 	 	IPLPLexer lexer = getLexer(input);
 	 	{
