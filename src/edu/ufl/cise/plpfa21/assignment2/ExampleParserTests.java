@@ -14,7 +14,7 @@ class ExampleParserTests {
 	
 	static boolean VERBOSE = true;
 	
-	static boolean doPrint = false;
+	static boolean doPrint = true;
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
         if(doPrint) {
@@ -181,6 +181,40 @@ class ExampleParserTests {
 		FUN func(WO : INT, NI: BOOLEAN, TA: STRING)   (: LIST[]) DO
 		RETURN X+1*DFD;
 		END
+		
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test14() {
+		String input = """
+		VAL pi = 3;
+		FUN main():INT DO
+		RETURN pi + pi;
+		END
+		
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test15() {
+		String input = """
+		FUN f() : LIST[BOOLEAN]
+		DO
+        RETURN NIL;
+			END
+		
+		""";
+		noErrorParse(input);
+	}
+	@Test 
+	public void test16() {
+		String input = """
+		FUN g():INT DO RETURN 1; END
+				FUN f()
+				DO
+				RETURN g();
+				END
 		
 		""";
 		noErrorParse(input);

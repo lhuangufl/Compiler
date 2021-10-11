@@ -3,11 +3,51 @@ package edu.ufl.cise.plpfa21.assignment1;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
+import java.util.List;
 
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
 import edu.ufl.cise.plpfa21.assignment2.IPLPParser;
 import edu.ufl.cise.plpfa21.assignment2.SyntaxException;
+import edu.ufl.cise.plpfa21.assignment3.ast.Expression;
+import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
+import edu.ufl.cise.plpfa21.assignment3.ast.IBinaryExpression;
+import edu.ufl.cise.plpfa21.assignment3.ast.IBlock;
+import edu.ufl.cise.plpfa21.assignment3.ast.IDeclaration;
+import edu.ufl.cise.plpfa21.assignment3.ast.IExpression;
+import edu.ufl.cise.plpfa21.assignment3.ast.IIdentifier;
+import edu.ufl.cise.plpfa21.assignment3.ast.IIntLiteralExpression;
+import edu.ufl.cise.plpfa21.assignment3.ast.INameDef;
+import edu.ufl.cise.plpfa21.assignment3.ast.IProgram;
+import edu.ufl.cise.plpfa21.assignment3.ast.IStatement;
+import edu.ufl.cise.plpfa21.assignment3.ast.IType;
+import edu.ufl.cise.plpfa21.assignment3.ast.IType.TypeKind;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.ASTNode__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.AssignmentStatement__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.BinaryExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.Block__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.BooleanLiteralExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.Expression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.FunctionCallExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.FunctionDeclaration___;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.IdentExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.Identifier__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.IfStatement__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.ImmutableGlobal__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.IntLiteralExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.LetStatement__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.ListSelectorExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.ListType__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.MutableGlobal__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.NameDef__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.NilConstantExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.PrimitiveType__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.Program__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.ReturnStatement__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.StringLiteralExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.SwitchStatement__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.UnaryExpression__;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.WhileStatement__;
 
 
 
@@ -208,226 +248,385 @@ public class CompilerComponentFactory {
 		private int outputSeq;
 		private ArrayList<Token> tokens = new ArrayList<Token>();
 		private Token token;
+		private ArrayList<IDeclaration> declarations = new ArrayList<IDeclaration>();
 		public IPLPParser1(ArrayList<Token> tokens) {
 			this.tokens = tokens;
 			this.outputSeq = 0;
 			this.token = tokens.get(outputSeq++);
 		}
 		@Override
-		public void parse() throws Exception {
+		public IASTNode parse() throws Exception {
+			Token t0 = token;
 			while (token.getKind() != Kind.EOF) {
 				switch (token.getKind()) {
 				case KW_VAR -> {
+					IExpression expr = null;
 					consume();
-					nameDef();				show("In case of KW_VAR nameDef() OK!");
+					INameDef varDef = nameDef();				show("In case of KW_VAR nameDef() OK!");
 					switch (token.getKind()) {
 					case SEMI -> {
 						match(Kind.SEMI); }
 					case ASSIGN -> {
 						consume();
-						expression();
+						expr = expression();
 						match(Kind.SEMI);
 					}
 					default -> throw new SyntaxException("Expected = or ;", token.line, token.posInLine);
 					}
+					declarations.add(new MutableGlobal__(
+							t0.getLine(),
+							t0.getCharPositionInLine(),
+							t0.getText(),varDef,expr));
 					parse();
 				}
 				case KW_VAL -> {
+					INameDef valDef;
+					IExpression expr;
 					consume();
-					nameDef();
+					valDef = nameDef();
 					match(Kind.ASSIGN);		show("In case of KW_VAL, match(Kind.ASSIGN); OK!");
-					expression();
-					match(Kind.SEMI);
+					expr = expression();	show("In case of KW_VAL, expr = expression(); OK!");
+					match(Kind.SEMI);		show("In case of KW_VAL, match(Kind.SEMI); OK!");
+					declarations.add(new ImmutableGlobal__(
+							t0.getLine(),
+							t0.getCharPositionInLine(),
+							t0.getText(),valDef,expr));
 					parse();
 				}
 				case KW_FUN -> {
 					consume(); 
+					IType resultType = null;
+					IBlock block;
+					ArrayList<INameDef> args = new ArrayList<INameDef>();
+					IIdentifier name = new Identifier__(token.getLine(),token.getCharPositionInLine(),token.getText(),token.getText());
 					match(Kind.IDENTIFIER); show("In case of KW_FUN, match(Kind.IDENTIFIER); OK");
 					match(Kind.LPAREN);		show("In case of KW_FUN, match(Kind.LPAREN); OK!");
-					nameDefList();			show("In case of KW_FUN, nameDefList(); OK!");
+					args = nameDefList();	show("In case of KW_FUN, nameDefList(); OK!");
 					match(Kind.RPAREN);		show("In case of KW_FUN, match(Kind.RPAREN);");
-					if (token.getKind()==Kind.LPAREN) {
+					if (token.getKind()==Kind.COLON) {
 						consume(); 
-						match(Kind.COLON); 
-						type(); 
-						match(Kind.RPAREN);
+						resultType = type();
 						}
 					match(Kind.KW_DO);		show("In case of KW_FUN, match(Kind.KW_DO); OK!");
-					block();				show("In case of KW_FUN, block() OK!");
+					block = block();		show("In case of KW_FUN, block() OK!");
 					match(Kind.KW_END);		show("In case of KW_FUN, match(Kind.KW_END); OK!");
+					declarations.add(new FunctionDeclaration___(
+							t0.getLine(),
+							t0.getCharPositionInLine(),
+							t0.getText(),
+							name,args,
+							resultType,block));
+					show(declarations);
 					parse();
 				}
 				default -> throw new SyntaxException("Expected Kind (VAR, VAL, FUN); But Kind is " + 
 				token.getKind(), token.line, token.posInLine);
 				}
-			}
+			}		
+			return new Program__(token.getLine(),token.getCharPositionInLine(),token.getText(),declarations);
 		}
 
-		void block() throws SyntaxException {
-			if (token.getKind()==Kind.KW_END || 
-					token.getKind()==Kind.EOF) 
-				return;
-			statement();
-			block();
+		IBlock block() throws SyntaxException {
+			ArrayList<IStatement> statements = new ArrayList<IStatement>();
+			while (token.getKind()!=Kind.KW_END && 
+					token.getKind()!=Kind.EOF) 
+				statements.add(statement());
+			return new Block__(token.getLine(), token.getCharPositionInLine(), token.getText(), statements);
 		}
 		
-		void statement() throws SyntaxException {
+		IStatement statement() throws SyntaxException {
+			IExpression e0 = null;
+			IBlock b0 = null;
+			Token t0 = token;
+			
 			switch(token.getKind()) {
 			case KW_RETURN -> {
 				consume(); 
-				expression(); 
-				match(Kind.SEMI);}
-			case KW_WHILE, 
-				KW_IF -> {
+				e0 = expression(); 
+				match(Kind.SEMI);
+				return new ReturnStatement__(t0.getLine(),t0.getCharPositionInLine(),t0.getText(),e0);
+				}
+			case KW_WHILE -> {
 				consume(); 
-				expression(); 		show("expression() OK! ");
-				match(Kind.KW_DO); 	show("match(Kind.KW_DO) OK!"); 
-				block(); 			show("block() OK!");
-				match(Kind.KW_END);}
+				e0 = expression(); 	
+				match(Kind.KW_DO);
+				b0 = block(); 			
+				match(Kind.KW_END);
+				return new WhileStatement__(t0.getLine(), t0.getCharPositionInLine(), t0.getText(), e0, b0);
+				}
+			case KW_IF -> {
+				consume(); 
+				e0 = expression(); 	
+				match(Kind.KW_DO);
+				b0 = block(); 			
+				match(Kind.KW_END);
+				show("In If Statement -> " + b0);
+				return new IfStatement__(t0.getLine(), t0.getCharPositionInLine(), t0.getText(), e0, b0);
+				}
 			case KW_LET -> {
 				consume(); 
-				nameDef();			show("In case of KW_LET, nameDef() ok! Next Kind -> " + token.getKind());
+				INameDef localDef = nameDef();
 				if (token.getKind()==Kind.ASSIGN) {
 					consume(); 
-					expression();
+					e0 = expression();
 					}
-				match(Kind.SEMI);
+				match(Kind.KW_DO);
+				b0 = block();
+				match(Kind.KW_END);
+				return new LetStatement__(t0.getLine(),t0.getCharPositionInLine(),t0.getText(),b0,e0,localDef);
 				}
 			case KW_SWITCH -> {
 				consume(); 	
-				expression();
+				IExpression switchExpression;
+				IBlock defaultBlock;
+				ArrayList<IBlock> blocks  = new ArrayList<IBlock>();
+				ArrayList<IExpression> branchExpressions = new ArrayList<IExpression>();
+				switchExpression = expression();
 				while (token.getKind()==Kind.KW_CASE) {
 					consume(); 
-					expression(); 
+					branchExpressions.add(expression()); 
 					match(Kind.COLON);
+					Token t1 = token;  //t1 records the start of a block for each "case";
+					ArrayList<IStatement> statements = new ArrayList<IStatement>(); // statements -> case statements
 					while (token.getKind()!= Kind.KW_CASE &&
 							token.getKind()!=Kind.KW_DEFAULT &&
 							token.getKind()!=Kind.KW_END && 
 							token.getKind()!=Kind.EOF)
-						{statement();			show("Case statement match OK!"); }
+						{statements.add(statement()); }
+					blocks.add(new Block__(t1.getLine(),t1.getCharPositionInLine(),t1.getText(),statements));
 					}
 				match(Kind.KW_DEFAULT); 
-				block(); 
+				defaultBlock = block(); 
 				match(Kind.KW_END);
+				return new SwitchStatement__(t0.getLine(),
+						t0.getCharPositionInLine(),
+						t0.getText(),
+						switchExpression,
+						branchExpressions,
+						blocks,defaultBlock);
 				}
-			case EOF, KW_END -> {return;}
-			default -> { 
-				expression(); 
+			case EOF, KW_END -> {throw new SyntaxException("Unexpected END OR EOF!", token.getLine(),token.getCharPositionInLine());}
+			default -> {
+				IExpression left = expression(); 
+				IExpression right = null;
 				if (token.getKind()==Kind.ASSIGN) {
 					consume(); 
-					expression();
+					right = expression();
 					} 
 				match(Kind.SEMI); 
-				return;
+				return new AssignmentStatement__(t0.getLine(),t0.getCharPositionInLine(),t0.getText(),left,right);
 				}
 			}
 		}
 		
-		void expression() throws SyntaxException {
-			logicalExpression();
-			return;
+		IExpression expression() throws SyntaxException {
+			return logicalExpression();
 		}
 		
-		void logicalExpression() throws SyntaxException {
-			comparisonExpression();
+		IExpression logicalExpression() throws SyntaxException {
+			IExpression left = comparisonExpression();
 			if (token.getKind()==Kind.OR || 
 					token.getKind()==Kind.AND) {
+				IExpression right = null;
+				Kind op = null;
+				op = token.getKind();
 				consume();
-				logicalExpression();
-			}
-			return;
+				right = logicalExpression();
+				return new BinaryExpression__(token.getLine(),
+						token.getCharPositionInLine(),
+						token.getText(),
+						left,right,op);
+			} else return left;
 		}
 		
-		void comparisonExpression() throws SyntaxException {
-			additiveExpression();
+		IExpression comparisonExpression() throws SyntaxException {
+			IExpression left = additiveExpression();
 			if (token.getKind()==Kind.GT || 
 					token.getKind()==Kind.LT ||
 					token.getKind()==Kind.EQUALS ||
 					token.getKind()==Kind.NOT_EQUALS) {
+				Kind op = token.getKind();
 				consume();
-				comparisonExpression();
-			}
-			return;
+				IExpression right = comparisonExpression();
+				return new BinaryExpression__(
+						token.getLine(),
+						token.getCharPositionInLine(),
+						token.getText(),
+						left,right,op);
+			} else return left;
 		}
 		
-		void additiveExpression() throws SyntaxException {
-			multiplicativeExpression();
+		IExpression additiveExpression() throws SyntaxException {
+			IExpression left = multiplicativeExpression();
 			if (token.getKind()==Kind.PLUS || 
 					token.getKind()==Kind.MINUS) {
+				Kind op = token.getKind();
 				consume();
-				additiveExpression();
-			}
-			return;
+				IExpression right = additiveExpression();
+				return new BinaryExpression__(
+						token.getLine(),
+						token.getCharPositionInLine(),
+						token.getText(),
+						left,right,op);
+			} else return left;
 		}
 		
-		void multiplicativeExpression() throws SyntaxException {
-			unaryExpression();
+		IExpression multiplicativeExpression() throws SyntaxException {
+			IExpression left = unaryExpression();
 			if (token.getKind()==Kind.TIMES ||
 					token.getKind()==Kind.DIV) {
+				IExpression right = null;
+				Kind op = token.getKind();
 				consume();
-				multiplicativeExpression();
-			}
-			return;
+				right = multiplicativeExpression();
+				return new BinaryExpression__(token.getLine(),
+						token.getCharPositionInLine(),
+						token.getText(),
+						left,right,op);
+			} else return left;
 		}
 		
-		void unaryExpression() throws SyntaxException {
+		IExpression unaryExpression() throws SyntaxException {
 			if (token.getKind()==Kind.BANG || 
-					token.getKind()==Kind.MINUS)
+					token.getKind()==Kind.MINUS) {
+				Kind op = token.getKind(); 
 				consume();
-			primaryExpression();
+				return new UnaryExpression__(token.getLine(), token.getCharPositionInLine(), token.getText(), primaryExpression(), op);
+			}
+			else return primaryExpression();
 		}
 		
-		void primaryExpression() throws SyntaxException {
+		IExpression primaryExpression() throws SyntaxException {
+			IExpression e0;
 			switch (token.getKind()) {
-			case INT_LITERAL, 
-				STRING_LITERAL, 
-				KW_TRUE, 
-				KW_FALSE, 
-				KW_BOOLEAN, 
-				KW_NIL -> consume();
+			case INT_LITERAL -> { 
+				e0 = new IntLiteralExpression__(
+					token.getLine(), 
+					token.getCharPositionInLine(), 
+					token.getText(), 
+					token.getIntValue());
+				consume(); 
+				}
+			case STRING_LITERAL -> { 
+				e0 = new StringLiteralExpression__(
+					token.getLine(), 
+					token.getCharPositionInLine(), 
+					token.getText(), 
+					token.getStringValue());
+				consume(); 
+				}
+			case KW_TRUE -> { 
+				e0 = new BooleanLiteralExpression__(
+						token.getLine(), 
+						token.getCharPositionInLine(), 
+						token.getText(), 
+						true);
+					consume(); 
+					}
+			case KW_FALSE -> { 
+				e0 = new BooleanLiteralExpression__(
+					token.getLine(), 
+					token.getCharPositionInLine(), 
+					token.getText(), 
+					false);
+				consume(); 
+				}
+				
+			case KW_NIL -> { 
+				e0 = new NilConstantExpression__(
+						token.getLine(), 
+						token.getCharPositionInLine(), 
+						token.getText()); 
+				consume(); 
+				}
 			case LPAREN -> {
 				consume(); 
-				expression(); 
+				e0 = expression(); 
 				match(Kind.RPAREN);
 				}
 			case IDENTIFIER -> {
+				ArrayList<IExpression> expList = new ArrayList<IExpression>();
+				Token identToken = token;
+				IIdentifier identName = new Identifier__(
+						identToken.line, 
+						identToken.getCharPositionInLine(), 
+						identToken.getText(), 
+						identToken.getText());
 				consume();
 				switch (token.getKind()) {
 				case LPAREN ->	{
 					consume(); 
 					if (token.getKind()!=Kind.RPAREN) {
-						expression();
+						expList.add(expression());
 						while (token.getKind()==Kind.COMMA) {
 							consume(); 
-							expression();
+							expList.add(expression());
 							}
 					}	
 					match(Kind.RPAREN);
+
+					e0 = new FunctionCallExpression__(
+							identToken.line, 
+							identToken.getCharPositionInLine(), 
+							identToken.getText(), 
+							identName,
+							expList);
 					}
-				case LSQUARE -> {consume(); expression(); match(Kind.RSQUARE);}
-				default -> {return;}
+				case LSQUARE -> {
+					consume();
+					IExpression index = expression();
+					e0 = new ListSelectorExpression__(
+							identToken.line, 
+							identToken.getCharPositionInLine(), 
+							identToken.getText(),
+							identName,
+							index);
+					match(Kind.RSQUARE);
+					}
+				default -> {
+					e0 = new IdentExpression__(
+							identToken.line, 
+							identToken.getCharPositionInLine(), 
+							identToken.getText(),
+							identName);
+					}
 				}
 			}
 			default -> throw new IllegalArgumentException("Unexpected value: " + token.getKind());
 			}
-			return;
+			return e0;
 		}
+			
+
 		
-		void nameDefList() throws SyntaxException {
+		
+		ArrayList<INameDef> nameDefList() throws SyntaxException {
+			ArrayList<INameDef> listNameDef = new ArrayList<INameDef>();
 			switch (token.getKind()) {
-			case RPAREN -> {return;}
+			case RPAREN -> {
+				return listNameDef; // No NameDef; Return Null.
+				}
 			case IDENTIFIER -> {
-				nameDef();
-				if (token.getKind()==Kind.COMMA) {
+				listNameDef.add(nameDef());
+				while (token.getKind()==Kind.COMMA) {
 					consume(); 
-					nameDefList();
+					listNameDef.add(nameDef());
 					}
 				}
 			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
 			}
+			return listNameDef;
 		}
 		
-		void nameDef() throws SyntaxException {
+		INameDef nameDef() throws SyntaxException {
+			IIdentifier identName = null;
+			IType typeName = null;
+			if (token.getKind()==Kind.IDENTIFIER) 
+				identName = new Identifier__(
+						token.line, 
+						token.getCharPositionInLine(), 
+						token.getText(), 
+						token.getText());
 			try {
 				match(Kind.IDENTIFIER);
 			} catch (SyntaxException e) {
@@ -435,29 +634,32 @@ public class CompilerComponentFactory {
 			}
 			if (token.getKind() == Kind.COLON) {
 				consume();
-				type(); 
+				typeName = type(); 
 			}
-			return;
+			return new NameDef__(
+					token.line,
+					token.getCharPositionInLine(),
+					token.getText(),
+					identName,
+					typeName);
 		}
 		
-		void type() throws SyntaxException {
+		IType type() throws SyntaxException {
 			switch (token.getKind()) {
-			case KW_INT, 
-				KW_STRING,
-				KW_BOOLEAN -> { 
-					consume(); 
-					return;
-				}
-			case KW_LIST -> {
+			case KW_INT 	-> {consume(); return new PrimitiveType__(token.getLine(),token.getCharPositionInLine(),token.getText(),TypeKind.INT);}
+			case KW_STRING	-> {consume(); return new PrimitiveType__(token.getLine(),token.getCharPositionInLine(),token.getText(),TypeKind.STRING);}
+			case KW_BOOLEAN -> {consume(); return new PrimitiveType__(token.getLine(),token.getCharPositionInLine(),token.getText(),TypeKind.BOOLEAN);}
+			case KW_LIST 	-> {
 				consume();
 				match(Kind.LSQUARE);
+				IType elementType = null;
 				if (token.getKind() != Kind.RSQUARE) 
-					{type();show("sdfs   " + token.getKind());}
+					elementType = type();
 				match(Kind.RSQUARE);
+				return new ListType__(token.getLine(), token.getCharPositionInLine(), token.getText(), elementType);
 				}
 			default -> throw new SyntaxException("Unexpected Kind: " + token.getKind(), token.line, token.posInLine);
 			}
-			return;
 		}
 
 		void match(Kind kind) throws SyntaxException {
@@ -478,6 +680,8 @@ public class CompilerComponentFactory {
 		}
 	}
 	
+	
+	
 	@SuppressWarnings("unused")
 	public static IPLPParser1 getParser(String input) {
 		ArrayList<Token> tokens = new ArrayList<Token>();
@@ -486,7 +690,6 @@ public class CompilerComponentFactory {
 			try {
 				tokens.add(lexer.nextToken());
 			} catch (LexicalException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		IPLPParser1 parser = new IPLPParser1(tokens);
