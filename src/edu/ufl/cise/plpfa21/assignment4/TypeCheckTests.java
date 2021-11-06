@@ -23,17 +23,6 @@ import edu.ufl.cise.plpfa21.assignment4.TypeCheckVisitor.TypeCheckException;
 class TypeCheckTests {
 	private static final boolean VERBOSE = false;
 
-	IASTNode checkTypes(IASTNode ast) throws Exception {
-		TypeCheckVisitor v = new TypeCheckVisitor();
-		ast.visit(v, null);
-		return ast;
-	}
-
-	IASTNode getAST(String input) throws Exception {
-		IPLPParser parser = CompilerComponentFactory.getParser(input);
-		return parser.parse();
-	}
-
 	void parseAndCheckTypes(String input) throws Exception {
 		show(input);
 		IASTNode ast = getAST(input);
@@ -43,6 +32,17 @@ class TypeCheckTests {
 		show("-------------------------");
 	}
 
+	IASTNode getAST(String input) throws Exception {
+		IPLPParser parser = CompilerComponentFactory.getParser(input);
+		return parser.parse();
+	}
+	
+	IASTNode checkTypes(IASTNode ast) throws Exception {
+		TypeCheckVisitor v = new TypeCheckVisitor();
+		ast.visit(v, null);
+		return ast;
+	}
+	
 	void parseAndCheckTypesWithTypeError(String input) throws Exception {
 		show(input);
 		IASTNode ast = getAST(input);

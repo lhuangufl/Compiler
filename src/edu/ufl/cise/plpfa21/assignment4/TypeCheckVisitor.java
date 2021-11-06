@@ -1,5 +1,6 @@
 package edu.ufl.cise.plpfa21.assignment4;
 
+import java.util.Iterator;
 import java.util.List;
 
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
@@ -39,6 +40,15 @@ import edu.ufl.cise.plpfa21.assignment3.astimpl.PrimitiveType__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
 
 public class TypeCheckVisitor implements ASTVisitor {
+	
+	private static final boolean VERBOSE = false;
+
+	@SuppressWarnings("unused")
+	private static void show(Object input) {
+		if (VERBOSE) {
+			System.out.println(input.toString());
+		}
+	}
 
 	@SuppressWarnings("serial")
 	public static class TypeCheckException extends Exception {
@@ -241,13 +251,13 @@ public class TypeCheckVisitor implements ASTVisitor {
 		}
 		return n;
 	}
-
+	
 	/**
 	 * arg is enclosing function definition
 	 */
 	@Override
 	public Object visitIReturnStatement(IReturnStatement n, Object arg) throws Exception {
-		//TODO
+		
 		throw new UnsupportedOperationException("IMPLEMENT ME!");
 	}
 
