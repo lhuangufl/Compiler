@@ -5,6 +5,7 @@ import java.util.List;
 
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
 import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
+import edu.ufl.cise.plpfa21.assignment3.ast.Expression;
 import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
 import edu.ufl.cise.plpfa21.assignment3.ast.IAssignmentStatement;
 import edu.ufl.cise.plpfa21.assignment3.ast.IBinaryExpression;
@@ -41,7 +42,7 @@ import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
 
 public class TypeCheckVisitor implements ASTVisitor {
 	
-	private static final boolean VERBOSE = false;
+	private static final boolean VERBOSE = true;
 
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
@@ -71,9 +72,40 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		show("-------visiting binary expression--------");
+		show(symtab);
+		IExpression leftExpression = n.getLeft();
+		show(leftExpression);
+		IExpression rightExpression = n.getRight();
+		show(rightExpression);
+		IType leftExpressionType = (IType) leftExpression.visit(this, arg);
+		show(leftExpressionType + " ------ leftExpressionType " );
+		IType rightExpressionType = (IType) rightExpression.visit(this, arg);
+		show(rightExpressionType + " ---- rightExpressionType" );
+		
+		check(leftExpressionType.equals(rightExpressionType), 
+				n, "Left Expression Type doesn't match with Right one");
+		show("left equals right");
+		
+		Kind op = n.getOp();
+		if (op.equals(Kind.GT) || 
+				op.equals(Kind.LT) || 
+				op.equals(Kind.EQUALS) || 
+				op.equals(Kind.NOT_EQUALS) || 
+				op.equals(Kind.AND) || 
+				op.equals(Kind.OR))
+			return PrimitiveType__.booleanType;
+		else if (op.equals(Kind.ASSIGN) || 
+				op.equals(Kind.MINUS) || 
+				op.equals(Kind.PLUS) || 
+				op.equals(Kind.DIV) || 
+				op.equals(Kind.TIMES))
+			return leftExpressionType;
+		else
+			throw new TypeCheckException(n.getLine() + ":" + n.getPosInLine() + " " + n.getText() + " Unkown OPERATOR");
 	}
-
+	
+	
 	/**
 	 * arg is enclosing function declaration
 	 */
@@ -83,13 +115,16 @@ public class TypeCheckVisitor implements ASTVisitor {
 		for (IStatement statement : statements) {
 			statement.visit(this, arg);
 		}
+		show("block checked okay!");
 		return null;
 	}
 
 	@Override
 	public Object visitIBooleanLiteralExpression(IBooleanLiteralExpression n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IType type = PrimitiveType__.booleanType;
+		n.setType(type);
+		return type;
 	}
 
 	@Override
@@ -136,9 +171,13 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIdentExpression(IIdentExpression n, Object arg) throws Exception {
+		show("@@@@@ visitIIdentExpression");
 		IIdentifier name = n.getName();
+		show("name @@" + name);
 		IDeclaration dec = (IDeclaration) name.visit(this, null);
+		show("dec @@" + dec);
 		IType type = getType(dec);
+		show("type @@" + type);
 		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
 		n.setType(type);
 		return type;
@@ -147,7 +186,13 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIIfStatement(IIfStatement n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		show("check if statement");
+		IExpression guardExpression = n.getGuardExpression();
+		show("guardExpression ---> " + guardExpression);
+		guardExpression.visit(this, arg);
+		n.getBlock().visit(this, n);
+		show("if statement chekced okay");
+		return null;
 	}
 
 	@Override
@@ -174,19 +219,34 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IExpression expression = n.getExpression();
+		IType expressionType = expression != null ? (IType) expression.visit(this, arg) : Type__.undefinedType;
+		show(" ---------------------- "  + n.getLocalDef().getIdent().getName());
+		n.getLocalDef().visit(this, n);
+		n.getBlock().visit(this, n);
+		return null;
 	}
 
 	@Override
 	public Object visitIListSelectorExpression(IListSelectorExpression n, Object arg) throws Exception {
+		show("----------Are you visiting here?------------");
+		show(n.getName());
 		IDeclaration dec = (IDeclaration) n.getName().visit(this, arg);
+		show("dec -----------> " + dec);
 		IType type = getType(dec);
+		show("type = getType(dec) -> " + type.isList() + " n.getIndex() -> " + n.getIndex());
 		check(type.isList(), n, "invalid or missing type for list ");
+		show("type is a list!!!");
 		IListType ltype = (IListType) type;
+		show(n.getIndex());
 		IType indexType = (IType) n.getIndex().visit(this, null);
+		show("indexType -> " + indexType.isInt());
 		check(indexType.isInt(), n, "index selector must be int");
+		show("After indexType -> " + indexType);
 		IType elementType = ltype.getElementType();
+		show("elementType -> " + elementType);
 		n.setType(elementType);
+		show("----------Are you leaving here?------------");
 		return elementType;
 	}
 
@@ -227,13 +287,16 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitINameDef(INameDef n, Object arg) throws Exception {
 		String name = n.getIdent().getName();
+		show("visitINameDef, n -----> " + n);
 		IType type = (IType) n.getType();
+		show("visitINameDef, type -----> " + type);
 		IType varType = type != null ? (IType) type.visit(this, null) : Type__.undefinedType;
 		if (arg instanceof IMutableGlobal || arg instanceof IImmutableGlobal) {
 			check(symtab.insert(name, (IDeclaration) arg), n, "Variable " + name + "already declared in this scope");
 		} else {
 			check(symtab.insert(name, n), n, "Variable " + name + "already declared in this scope");
 		}
+		show("visitINameDef, ok return varType -----> " + varType);
 		return varType;
 	}
 
@@ -247,18 +310,24 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitIProgram(IProgram n, Object arg) throws Exception {
 		List<IDeclaration> decs = n.getDeclarations();
 		for (IDeclaration dec : decs) {
+			show("check declaration");
 			dec.visit(this, symtab);
 		}
 		return n;
 	}
+	
+//	@Override
+//	public Object visitIASTNode(ASTVisitor n, Object arg) throws Exception {
+//		return null;
+//	}
 	
 	/**
 	 * arg is enclosing function definition
 	 */
 	@Override
 	public Object visitIReturnStatement(IReturnStatement n, Object arg) throws Exception {
-		
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		//TODO
+		return n.getExpression().visit(this, arg);
 	}
 
 	@Override
@@ -296,7 +365,19 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitISwitchStatement(ISwitchStatement n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IExpression switchExpression = n.getSwitchExpression();
+		IType switchType = (IType) switchExpression.visit(this, arg);
+		show("----------------switchType ===" + switchType);
+		List<IExpression> branchExpressions = n.getBranchExpressions();
+		for (IExpression e : branchExpressions) {
+			show("----------------------Inside for loop ====" + e);
+			check(e.visit(this, arg).equals(switchType), n, "Branch Expession inconsistant with Switch Expression.");
+			
+		}
+		show("branch expression checked okay");
+		n.getDefaultBlock().visit(this, n);
+		show("Default Block checked okay");
+		return null;
 	}
 
 	@Override
@@ -330,7 +411,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitIWhileStatement(IWhileStatement n, Object arg) throws Exception {
 		IExpression guard = n.getGuardExpression();
 		IType guardType = (IType) guard.visit(this, arg);
-		check(guardType.isBoolean(), n, "Guard expression type not boolean");
+//		check(guardType.isBoolean(), n, "Guard expression type not boolean");
 		IBlock block = n.getBlock();
 		block.visit(this, arg);
 		return arg;
@@ -338,11 +419,27 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIMutableGlobal(IMutableGlobal n, Object arg) throws Exception {
+		
+		show("----------visiting mutable global------------");
+		show(symtab);
+		
 		IExpression expression = n.getExpression();
+		
+		show("n.getExpression() -> " + expression);
+//		show("visit expression ---> " + expression.visit(this, arg));
+		show("n getVarDef --------> " + n.getVarDef());
 		IType expressionType = expression != null ? (IType) expression.visit(this, arg) : Type__.undefinedType;
+		
+		show("expressionType ------> " + expressionType);
 		INameDef def = n.getVarDef();
-		IType declaredType = (IType) def.visit(this, n);
+		
+		show("def = n.getVarDef() -> " + def.getType());
+		IType declaredType = (IType) def.visit(this, arg);
+		
+		show("declaredType -> " + declaredType);
 		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
+		
+		show("inferredType -> " + inferredType);
 		def.setType(inferredType);
 		return null;
 	}
@@ -435,8 +532,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIdentifier(IIdentifier n, Object arg) throws Exception {
+
 		String name = n.getName();
+
 		IDeclaration dec = symtab.lookupDec(name);
+
 		check(dec != null, n, "identifier not declared");
 		return dec;
 	}

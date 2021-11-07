@@ -521,8 +521,8 @@ public class CompilerComponentFactory {
 						token.getCharPositionInLine(), 
 						token.getText(), 
 						true);
-					consume(); 
-					}
+				consume(); 
+				}
 			case KW_FALSE -> { 
 				e0 = new BooleanLiteralExpression__(
 					token.getLine(), 
@@ -655,6 +655,7 @@ public class CompilerComponentFactory {
 				IType elementType = null;
 				if (token.getKind() != Kind.RSQUARE) 
 					elementType = type();
+					show("element type: " + elementType);
 				match(Kind.RSQUARE);
 				return new ListType__(token.getLine(), token.getCharPositionInLine(), token.getText(), elementType);
 				}

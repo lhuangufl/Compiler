@@ -14,6 +14,15 @@ import edu.ufl.cise.plpfa21.assignment3.ast.IType;
  */
 public class SymbolTable {
 
+	private static final boolean VERBOSE = false;
+
+	@SuppressWarnings("unused")
+	private static void show(Object input) {
+		if (VERBOSE) {
+			System.out.println(input.toString());
+		}
+	}
+	
 	static class SymbolTableEntry {
 
 		int scope; // scope number 
@@ -33,9 +42,6 @@ public class SymbolTable {
 			return "SymbolTableEntry [scope=" + scope + ",  mutable=" + mutable + ", dec="
 					+ dec + ", next=" + next + "]";
 		}
-
-
-
 	}
 
 	HashMap<String, SymbolTableEntry> entries;  //map from names to SymbolTableEntry
@@ -80,7 +86,7 @@ public class SymbolTable {
 			}
 			entry = entry.next;
 		}
-		
+		show(name + " ------ " + entries.get(name));
 		// Create a new SymbolTableEntry object for the given name and declaration and insert into the HashMap
 		// If there was already an entry for this name, the new SymbolTableEntry becomes the head 
 		// of a chain of entries for this name.  
