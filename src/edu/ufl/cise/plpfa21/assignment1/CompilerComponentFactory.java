@@ -635,7 +635,7 @@ public class CompilerComponentFactory {
 			if (token.getKind() == Kind.COLON) {
 				consume();
 				typeName = type(); 
-			}
+			} 
 			return new NameDef__(
 					token.line,
 					token.getCharPositionInLine(),

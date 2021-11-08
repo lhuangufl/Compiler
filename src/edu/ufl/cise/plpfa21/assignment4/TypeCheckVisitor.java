@@ -39,6 +39,7 @@ import edu.ufl.cise.plpfa21.assignment3.ast.IWhileStatement;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.ListType__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.PrimitiveType__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
+import edu.ufl.cise.plpfa21.assignment4.SymbolTable.SymbolTableEntry;
 
 public class TypeCheckVisitor implements ASTVisitor {
 	
@@ -88,21 +89,32 @@ public class TypeCheckVisitor implements ASTVisitor {
 		show("left equals right");
 		
 		Kind op = n.getOp();
+		show(op);
 		if (op.equals(Kind.GT) || 
 				op.equals(Kind.LT) || 
 				op.equals(Kind.EQUALS) || 
-				op.equals(Kind.NOT_EQUALS) || 
-				op.equals(Kind.AND) || 
-				op.equals(Kind.OR))
+				op.equals(Kind.NOT_EQUALS))
 			return PrimitiveType__.booleanType;
-		else if (op.equals(Kind.ASSIGN) || 
+		else if (leftExpressionType.equals(PrimitiveType__.booleanType) && 
+				op.equals(Kind.AND) || 
+				op.equals(Kind.OR)) 
+			return PrimitiveType__.booleanType;
+		else if (leftExpressionType.equals(PrimitiveType__.intType) && 
 				op.equals(Kind.MINUS) || 
-				op.equals(Kind.PLUS) || 
+				op.equals(Kind.PLUS) ||
 				op.equals(Kind.DIV) || 
 				op.equals(Kind.TIMES))
 			return leftExpressionType;
-		else
+		else if (leftExpressionType.equals(PrimitiveType__.stringType) &&
+				op.equals(Kind.PLUS))
+			return leftExpressionType;
+		else if (leftExpressionType.equals(IType.TypeKind.LIST) &&
+				op.equals(Kind.PLUS))
+			return leftExpressionType;
+		else {
+			show("Going to throw an exception");
 			throw new TypeCheckException(n.getLine() + ":" + n.getPosInLine() + " " + n.getText() + " Unkown OPERATOR");
+		}
 	}
 	
 	
@@ -111,6 +123,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIBlock(IBlock n, Object arg) throws Exception {
+		show("--------- Visiting block -------------");
+		show(arg.toString());
 		List<IStatement> statements = n.getStatements();
 		for (IStatement statement : statements) {
 			statement.visit(this, arg);
@@ -143,7 +157,10 @@ public class TypeCheckVisitor implements ASTVisitor {
 			IType argType = (IType) argument.visit(this, argument);
 			check(fullyTyped(argType), argument, "Type of argument must be defined");
 		}
+		show("Going to check block within IFUNCTION Declaration");
+
 		n.getBlock().visit(this, n);
+		show("checked OKAY block with IFUNCTION Declaration");
 		symtab.leaveScope();
 		return null;
 	}
@@ -171,13 +188,24 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIdentExpression(IIdentExpression n, Object arg) throws Exception {
-		show("@@@@@ visitIIdentExpression");
+//		show("@@@@@ visitIIdentExpression");
+//		show(symtab);
+//		IIdentifier name = n.getName();
+//		show("current scope @@" + symtab.currentScope + " |||  name @@ " + name.getName());
+//		check(symtab.entries.containsKey(name.getName()), n, "Identifier " + name + " is not declared yet");
+//		SymbolTableEntry entry = symtab.entries.get(name.getName());
+//		show("entry.scope ---> " + entry.scope);
+//		check(entry.scope == symtab.currentScope, n, name + " not defined in current scope");
+//		IDeclaration dec = (IDeclaration) name.visit(this, null);
+//		show("dec @@" + dec);
+//		IType type = getType(dec);
+//		show("type @@" + type);
+//		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
+//		n.setType(type);
+//		return type;
 		IIdentifier name = n.getName();
-		show("name @@" + name);
 		IDeclaration dec = (IDeclaration) name.visit(this, null);
-		show("dec @@" + dec);
 		IType type = getType(dec);
-		show("type @@" + type);
 		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
 		n.setType(type);
 		return type;
@@ -197,12 +225,14 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIImmutableGlobal(IImmutableGlobal n, Object arg) throws Exception {
+		show("------- Visiting IImmutableGlobal -------");
 		IExpression expression = n.getExpression(); // IIMutableGlobal must have initalizing expression
 		IType expressionType = (IType) expression.visit(this, arg);
 		INameDef nameDef = n.getVarDef();
 		IType declaredType = (IType) nameDef.visit(this, n);
 		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
 		nameDef.setType(inferredType);
+		show("------- Leaving IImmutableGlobal -------");
 		return null;
 	}
 
@@ -375,7 +405,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 			
 		}
 		show("branch expression checked okay");
-		n.getDefaultBlock().visit(this, n);
+		n.getDefaultBlock().visit(this, arg);
 		show("Default Block checked okay");
 		return null;
 	}
@@ -436,6 +466,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 		show("def = n.getVarDef() -> " + def.getType());
 		IType declaredType = (IType) def.visit(this, arg);
 		
+		check(declaredType != Type__.undefinedType, n, "Mutable Global Declared Type Undefined.");
+		
 		show("declaredType -> " + declaredType);
 		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
 		
@@ -447,8 +479,10 @@ public class TypeCheckVisitor implements ASTVisitor {
 	IType unifyAndCheck(IType declaredType, IType expressionType, IASTNode n) throws TypeCheckException {
 		boolean fullyDefinedExpr = fullyTyped(expressionType);
 		boolean fullyDefinedDec = fullyTyped(declaredType);
+		show(fullyDefinedExpr + " +++ " + declaredType);
 		IType inferredType;
 		check(fullyDefinedDec || fullyDefinedExpr, n, "type must be inferrable from declaration or initializer");
+		show("fullyDefinedDec || fullyDefinedExpr -> " + (fullyDefinedDec || fullyDefinedExpr));
 		if (fullyDefinedDec && fullyDefinedExpr) {
 			check(compatibleAssignmentTypes(declaredType, expressionType), n, "incompatible types in declaration");
 			inferredType = declaredType;
@@ -471,6 +505,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 			}
 			inferredType = e;
 		}
+		show("inferredType --++ --> " + inferredType);
 		return inferredType;
 	}
 

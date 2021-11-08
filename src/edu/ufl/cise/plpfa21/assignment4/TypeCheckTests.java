@@ -50,6 +50,10 @@ class TypeCheckTests {
 				
 			} catch (TypeCheckException e) {
 				show(e);
+				out.println(e.getMessage());
+				out.println("input=");
+				out.println(input);
+				out.println("-----------");
 				throw e;
 			}
 		});
@@ -891,26 +895,45 @@ class TypeCheckTests {
 		parseAndCheckTypesWithTypeError(input);
 	}
 
-//	@DisplayName("test52")
-//	@Test
-//	public void test52(TestInfo testInfo) throws Exception {
-//		String input = """
-//				VAL a = 1;
-//				VAR b = 2;
-//				VAR x: INT;
-//				FUN f(x:INT)
-//				DO
-//				SWITCH x
-//				CASE 0 :
-//				CASE a :
-//				CASE b :
-//				DEFAULT
-//				END
-//
-//				END
-//
-//				""";
-//		parseAndCheckTypesWithTypeError(input);
-//	}
+	@DisplayName("test52")
+	@Test
+	public void test52(TestInfo testInfo) throws Exception {
+		String input = """
+				VAL a = 1;
+				VAR b = 2;
+				VAR x: INT;
+				FUN f(x:INT)
+				DO
+				SWITCH x
+				CASE 0 :
+				CASE a :
+				CASE b :
+				DEFAULT
+				END
 
+				END
+
+				""";
+		parseAndCheckTypesWithTypeError(input);
+	}
+	
+	@DisplayName("test53")
+	@Test
+	public void test53(TestInfo testInfo) throws Exception {
+		String input = """
+				VAL a = 1;
+				VAR b = 2;
+				VAR x: INT;
+				FUN f(x:INT)
+				DO
+					WHILE x==1
+						DO
+						x = a + 1;
+						END
+				END
+				
+
+				""";
+		parseAndCheckTypesWithTypeError(input);
+	}
 }
