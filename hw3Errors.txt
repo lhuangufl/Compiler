@@ -1,0 +1,294 @@
+1:0 VAL
+incompatible types in declaration
+input=
+VAL a: INT = "hello";
+
+
+-----------
+1:0 VAL
+incompatible types in declaration
+input=
+VAL a: STRING = TRUE;
+
+
+-----------
+1:0 VAL
+incompatible types in declaration
+input=
+VAL a: BOOLEAN = 0;
+
+
+-----------
+1:0 VAR
+incompatible types in declaration
+input=
+VAR a: BOOLEAN = "hello";
+
+
+-----------
+1:0 VAR
+incompatible types in declaration
+input=
+VAR a: INT = "hello" + "goodbye";
+	VAR b: INT = a-1;
+
+
+-----------
+1:13 a
+identifier not declared
+input=
+VAL a: INT = a+1;
+
+
+-----------
+2:0 VAR
+incompatible types in declaration
+input=
+VAR a: LIST[LIST[INT]];
+VAR b: LIST[LIST[STRING]] = a[2];
+
+
+
+-----------
+2:17 ;
+Left Expression Type doesn't match with Right one
+input=
+	VAL  a: STRING = "hello";
+VAL  b: INT = a-1;
+
+
+-----------
+3:21 ;
+Left Expression Type doesn't match with Right one
+input=
+VAL  a: STRING = "hello";
+VAL  b: INT = 3;
+VAR  c: BOOLEAN = a<b;
+VAR  e:  BOOLEAN= c == d;
+VAR  f:  BOOLEAN= e != d;
+VAR  g:  BOOLEAN = !f != d;
+VAR  h:  BOOLEAN  = !(f == d);
+VAR  i:  BOOLEAN = g && h;
+VAR  j:  BOOLEAN = g || h;
+
+
+-----------
+4:23 d
+identifier not declared
+input=
+VAL  a: INT = 2;
+VAL  b: INT = 3;
+VAR  c: BOOLEAN = a<b;
+VAR  e:  BOOLEAN= c == d; /* d not declared */
+
+
+-----------
+5:24 ;
+Left Expression Type doesn't match with Right one
+input=
+VAL  a: INT = 2;
+VAL  b: INT = 3;
+VAR  c: BOOLEAN = a<b;
+VAR  d: BOOLEAN = TRUE;
+VAR  e:  BOOLEAN= c == b;
+
+
+-----------
+7:20 b
+Illegal operator or expression type in unary expression
+input=
+VAL  a: INT = 2;
+VAL  b: INT = 3;
+VAR  c: BOOLEAN = a<b;
+VAR  d: BOOLEAN = TRUE;
+VAR  e:  BOOLEAN= c == d;
+VAR  f:  BOOLEAN= e != d;
+VAR  g:  BOOLEAN = !b != d;  /*b wrong type*/
+VAR  h:  BOOLEAN  = !(f == d);
+VAR  i:  BOOLEAN = g && h;
+VAR  j:  BOOLEAN = g || h;
+
+
+-----------
+7:24 d
+types of actual and formal parameter sare inconsistent
+input=
+VAL a: INT = 4;
+VAL b: INT = -a;
+VAL c: INT = -(-a);
+VAL d: INT = -5;
+FUN f(x:INT, y:BOOLEAN, s:STRING):STRING
+                  DO RETURN "hello"; END
+VAR e:STRING = f(a,TRUE,d);
+
+
+-----------
+4:11 a
+attempting to assign to immutable variable
+input=
+VAL a:INT = 42;
+FUN f(x:INT, y:BOOLEAN):INT
+DO
+   IF y DO a = x; END
+   IF !y DO a = 0; END
+END
+
+
+-----------
+4:0 f
+cannot assign to function
+input=
+VAR a: INT;
+FUN f(x:INT) DO a = x; END
+FUN main() DO
+f(3) = 4;
+END
+
+
+-----------
+2:7 )
+Type of argument must be defined
+input=
+VAR a: INT;
+FUN f(x) DO a = x; END
+FUN main() DO
+f(3);
+END
+
+
+-----------
+3:15 )
+Type of argument must be defined
+input=
+VAR a: LIST[INT];
+VAR N = 5;
+FUN f(b: LIST[])
+DO
+		LET i:INT=0
+		DO  LET c:LIST[INT]
+		    DO
+		    WHILE i < N
+		       DO
+		        c[i] = b[i] + i;
+		       END
+
+		    END
+		END
+      END
+   VAR j=0;
+   FUN init() DO
+      WHILE j < N
+      DO
+          a[j] = j;
+      END
+   END
+   FUN main() DO
+       init();
+       f(a);
+   END
+
+
+-----------
+3:15 )
+Type of argument must be defined
+input=
+VAR a: LIST[INT] = NIL;
+VAR N = 5;
+FUN f(b: LIST[])
+DO
+		LET i:INT=0
+		DO  LET c:LIST[INT]
+		    DO
+		    WHILE i < N
+		       DO
+		        c[i] = i;
+		        a[i] = b[i] + c[i];
+		       END
+
+		    END
+		END
+      END
+   VAR j=0;
+   FUN init() DO
+      WHILE j < N
+      DO
+          a[j] = j;
+      END
+   END
+   FUN main() DO
+       init();
+       f(a);
+   END
+
+
+-----------
+3:15 )
+Type of argument must be defined
+input=
+VAL a: LIST[INT] = NIL;
+VAR N = 5;
+FUN f(b: LIST[])
+DO
+		LET i:INT=0
+		DO  LET c:LIST[INT]
+		    DO
+		    WHILE i < N
+		       DO
+		        c[i] = i;
+		        a[i] = b[i] + c[i];
+		       END
+
+		    END
+		END
+      END
+   VAR j=0;
+   FUN init() DO
+      WHILE j < N
+      DO
+          a[j] = j;
+      END
+   END
+   FUN main() DO
+       init();
+       f(a);
+   END
+
+
+-----------
+1:15 ]
+incompatible expression type
+input=
+VAR a: LIST[INT];
+VAR b: LIST[] = a[0];
+
+
+-----------
+2:15 ]
+incompatible expression type
+input=
+
+VAR a: LIST[INT];
+VAR b: LIST[] = a[0];
+VAR c: LIST[] = b[0];
+
+
+-----------
+6:0 SWITCH
+Branch Expression is not constant.
+input=
+VAL a = 1;
+VAR b = 2;
+VAR x: INT;
+FUN f(x:INT)
+DO
+SWITCH x
+CASE 0 :
+CASE a :
+CASE b :
+DEFAULT
+END
+
+END
+
+
+-----------

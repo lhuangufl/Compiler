@@ -916,24 +916,5 @@ class TypeCheckTests {
 				""";
 		parseAndCheckTypesWithTypeError(input);
 	}
-	
-	@DisplayName("test53")
-	@Test
-	public void test53(TestInfo testInfo) throws Exception {
-		String input = """
-				VAL a = 1;
-				VAR b = 2;
-				VAR x: INT;
-				FUN f(x:INT)
-				DO
-					WHILE x==1
-						DO
-						x = a + 1;
-						END
-				END
-				
 
-				""";
-		parseAndCheckTypesWithTypeError(input);
-	}
 }

@@ -402,7 +402,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		for (IExpression e : branchExpressions) {
 			show("----------------------Inside for loop ====" + e);
 			check(e.visit(this, arg).equals(switchType), n, "Branch Expession inconsistant with Switch Expression.");
-			
+			check(isConstantExpression(e), n, "Branch Expression is not constant.");
 		}
 		show("branch expression checked okay");
 		n.getDefaultBlock().visit(this, arg);
@@ -450,28 +450,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIMutableGlobal(IMutableGlobal n, Object arg) throws Exception {
 		
-		show("----------visiting mutable global------------");
-		show(symtab);
-		
 		IExpression expression = n.getExpression();
-		
-		show("n.getExpression() -> " + expression);
-//		show("visit expression ---> " + expression.visit(this, arg));
-		show("n getVarDef --------> " + n.getVarDef());
 		IType expressionType = expression != null ? (IType) expression.visit(this, arg) : Type__.undefinedType;
-		
-		show("expressionType ------> " + expressionType);
 		INameDef def = n.getVarDef();
-		
-		show("def = n.getVarDef() -> " + def.getType());
-		IType declaredType = (IType) def.visit(this, arg);
-		
-		check(declaredType != Type__.undefinedType, n, "Mutable Global Declared Type Undefined.");
-		
-		show("declaredType -> " + declaredType);
+		IType declaredType = (IType) def.visit(this, n);
 		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
-		
-		show("inferredType -> " + inferredType);
 		def.setType(inferredType);
 		return null;
 	}
