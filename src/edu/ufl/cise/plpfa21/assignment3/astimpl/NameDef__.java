@@ -42,4 +42,8 @@ public class NameDef__ extends ASTNode__ implements INameDef {
 		return "NameDef__ [identifier=" + identifier + ", type=" + type + "]";
 	}
 
+
+
+	
+
 }

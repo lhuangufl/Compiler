@@ -1,5 +1,12 @@
 package edu.ufl.cise.plpfa21.assignment1;
 
+import edu.ufl.cise.plpfa21.assignment2.IPLPParser;
+import edu.ufl.cise.plpfa21.assignment3.ReferenceParser;
+import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
+import edu.ufl.cise.plpfa21.assignment4.ReferenceTypeCheckVisitor;
+
+
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +15,7 @@ import java.util.List;
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
 import edu.ufl.cise.plpfa21.assignment2.IPLPParser;
 import edu.ufl.cise.plpfa21.assignment2.SyntaxException;
+import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
 import edu.ufl.cise.plpfa21.assignment3.ast.Expression;
 import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
 import edu.ufl.cise.plpfa21.assignment3.ast.IBinaryExpression;
@@ -48,6 +56,8 @@ import edu.ufl.cise.plpfa21.assignment3.astimpl.SwitchStatement__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.UnaryExpression__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.WhileStatement__;
+import edu.ufl.cise.plpfa21.assignment4.TypeCheckVisitor;
+import edu.ufl.cise.plpfa21.assignment5.StarterCodeGenVisitor;
 
 
 
@@ -848,6 +858,25 @@ public class CompilerComponentFactory {
 			}
 		}
 		return lexer;
+	}
+
+
+
+	public static ASTVisitor getTypeCheckVisitor() {
+		// TODO Auto-generated method stub
+		System.out.println("Create TypeCheckVisitor");
+		ASTVisitor cv = new TypeCheckVisitor();
+		System.out.println("return TypeCheckVisitor");
+		return cv;
+	}
+
+
+	public static ASTVisitor getCodeGenVisitor(String className, String packageName, String string) {
+		// TODO Auto-generated method stub
+		System.out.println("Create StarterCodeGenVisitor");
+		ASTVisitor cv = new StarterCodeGenVisitor(className, packageName, string);
+		System.out.println("return StarterCodeGenVisitor");		
+		return cv;
 	}
 }
 

@@ -13,6 +13,7 @@ import edu.ufl.cise.plpfa21.assignment3.ast.IBlock;
 import edu.ufl.cise.plpfa21.assignment3.ast.IBooleanLiteralExpression;
 import edu.ufl.cise.plpfa21.assignment3.ast.IDeclaration;
 import edu.ufl.cise.plpfa21.assignment3.ast.IExpression;
+import edu.ufl.cise.plpfa21.assignment3.ast.IExpressionStatement;
 import edu.ufl.cise.plpfa21.assignment3.ast.IFunctionCallExpression;
 import edu.ufl.cise.plpfa21.assignment3.ast.IFunctionDeclaration;
 import edu.ufl.cise.plpfa21.assignment3.ast.IIdentExpression;
@@ -61,7 +62,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	SymbolTable symtab = new SymbolTable();
 
-	private void check(boolean b, IASTNode n, String message) throws TypeCheckException {
+	private static void check(boolean b, IASTNode n, String message) throws TypeCheckException {
 		if (!b) {
 			if (n.getLine() > 0) {
 				message = n.getLine() + ":" + n.getPosInLine() + " " + n.getText() + "\n" + message;
@@ -557,6 +558,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 		check(dec != null, n, "identifier not declared");
 		return dec;
+	}
+
+	@Override
+	public Object visitIExpressionStatement(IExpressionStatement n, Object arg) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
