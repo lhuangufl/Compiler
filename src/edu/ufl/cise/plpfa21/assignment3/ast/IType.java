@@ -8,7 +8,7 @@ public interface IType extends IASTNode {
 		INT,
 		BOOLEAN,
 		STRING,
-		LIST
+		LIST,
 	}
 	
 	boolean isInt();

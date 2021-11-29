@@ -44,7 +44,7 @@ import edu.ufl.cise.plpfa21.assignment4.SymbolTable.SymbolTableEntry;
 
 public class TypeCheckVisitor implements ASTVisitor {
 	
-	private static final boolean VERBOSE = true;
+	private static final boolean VERBOSE = false;
 
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
@@ -75,18 +75,18 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
 		//TODO
 		show("-------visiting binary expression--------");
-		show(symtab);
 		IExpression leftExpression = n.getLeft();
 		show(leftExpression);
 		IExpression rightExpression = n.getRight();
 		show(rightExpression);
 		IType leftExpressionType = (IType) leftExpression.visit(this, arg);
-		show(leftExpressionType + " ------ leftExpressionType " );
 		IType rightExpressionType = (IType) rightExpression.visit(this, arg);
+		show(leftExpressionType + " ------ leftExpressionType " );
 		show(rightExpressionType + " ---- rightExpressionType" );
-		
-		check(leftExpressionType.equals(rightExpressionType), 
-				n, "Left Expression Type doesn't match with Right one");
+//		check(leftExpressionType.equals(rightExpressionType) || 
+//				leftExpressionType.equals(Type__.undefinedType), 
+//				n, "Left Expression Type doesn't match with Right one");
+
 		show("left equals right");
 		
 		Kind op = n.getOp();
@@ -96,22 +96,22 @@ public class TypeCheckVisitor implements ASTVisitor {
 				op.equals(Kind.EQUALS) || 
 				op.equals(Kind.NOT_EQUALS))
 			return PrimitiveType__.booleanType;
-		else if (leftExpressionType.equals(PrimitiveType__.booleanType) && 
+		else if (rightExpressionType.equals(PrimitiveType__.booleanType) && 
 				op.equals(Kind.AND) || 
 				op.equals(Kind.OR)) 
 			return PrimitiveType__.booleanType;
-		else if (leftExpressionType.equals(PrimitiveType__.intType) && 
+		else if (rightExpressionType.equals(PrimitiveType__.intType) && 
 				op.equals(Kind.MINUS) || 
 				op.equals(Kind.PLUS) ||
 				op.equals(Kind.DIV) || 
 				op.equals(Kind.TIMES))
-			return leftExpressionType;
-		else if (leftExpressionType.equals(PrimitiveType__.stringType) &&
+			return rightExpressionType;
+		else if (rightExpressionType.equals(PrimitiveType__.stringType) &&
 				op.equals(Kind.PLUS))
-			return leftExpressionType;
-		else if (leftExpressionType.equals(IType.TypeKind.LIST) &&
+			return rightExpressionType;
+		else if (rightExpressionType.equals(IType.TypeKind.LIST) &&
 				op.equals(Kind.PLUS))
-			return leftExpressionType;
+			return rightExpressionType;
 		else {
 			show("Going to throw an exception");
 			throw new TypeCheckException(n.getLine() + ":" + n.getPosInLine() + " " + n.getText() + " Unkown OPERATOR");
@@ -210,6 +210,18 @@ public class TypeCheckVisitor implements ASTVisitor {
 		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
 		n.setType(type);
 		return type;
+	}
+
+	@Override
+	public Object visitIIdentifier(IIdentifier n, Object arg) throws Exception {
+
+		String name = n.getName();
+
+		IDeclaration dec = symtab.lookupDec(name);
+		show("IDeclaration dec = " + dec);
+
+		check(dec != null, n, "identifier not declared");
+		return dec;
 	}
 
 	@Override
@@ -442,7 +454,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitIWhileStatement(IWhileStatement n, Object arg) throws Exception {
 		IExpression guard = n.getGuardExpression();
 		IType guardType = (IType) guard.visit(this, arg);
-//		check(guardType.isBoolean(), n, "Guard expression type not boolean");
+		check(guardType.isBoolean(), n, "Guard expression type not boolean");
 		IBlock block = n.getBlock();
 		block.visit(this, arg);
 		return arg;
@@ -547,17 +559,6 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	boolean isMutable(IDeclaration dec) {
 		return (dec instanceof IMutableGlobal || dec instanceof INameDef);
-	}
-
-	@Override
-	public Object visitIIdentifier(IIdentifier n, Object arg) throws Exception {
-
-		String name = n.getName();
-
-		IDeclaration dec = symtab.lookupDec(name);
-
-		check(dec != null, n, "identifier not declared");
-		return dec;
 	}
 
 	@Override

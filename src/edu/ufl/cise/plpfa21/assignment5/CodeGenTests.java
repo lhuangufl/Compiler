@@ -1,5 +1,6 @@
 package edu.ufl.cise.plpfa21.assignment5;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
@@ -92,7 +93,6 @@ public class CodeGenTests {
 		ast.visit(CompilerComponentFactory.getTypeCheckVisitor(), null);
 		show(ast);
 		byte[] bytecode = (byte[]) ast.visit(CompilerComponentFactory.getCodeGenVisitor(className, packageName, ""), null);
-		show(CodeGenUtils.bytecodeToString(bytecode));
 		return bytecode;
 	}
 
@@ -113,7 +113,9 @@ public class CodeGenTests {
 	 */
 	Object loadClassAndRunMethod(byte[] bytecode, String className, String methodName, Object[] args) throws Exception {
 		Class<?> testClass = getClass(bytecode, className);
-		return runMethod(testClass,methodName, args);
+		show("testClass -> " + testClass + " " + methodName + " " + args);
+		show(testClass.getDeclaredMethods());
+		return runMethod(testClass, methodName, args);
 	}
 
 	private Method findMethod(String name, Method[] methods) {
@@ -382,7 +384,7 @@ public class CodeGenTests {
 				END
 				""";
 		byte[] bytecode = compile(input, className, packageName);
-		show(CodeGenUtils.bytecodeToString(bytecode));
+//		show("Bytecode Generated -> " + CodeGenUtils.bytecodeToString(bytecode));
 		int x = (int) loadClassAndRunMethod(bytecode, className, "f", null);
 		assertEquals(33, x);
 	}
@@ -902,6 +904,7 @@ public class CodeGenTests {
 		show(CodeGenUtils.bytecodeToString(bytecode));
 		Object[] params = { };
 		int result = (int) loadClassAndRunMethod(bytecode, className, "a", params);
+		show(result);
 		assertEquals(10, result);
 	}
 	
@@ -1037,6 +1040,7 @@ public class CodeGenTests {
 		show(CodeGenUtils.bytecodeToString(bytecode));
 		Object[] params = { 1, 5, 1 };
 		int result = (int) loadClassAndRunMethod(bytecode, className, "a", params);
+		show(result);
 		assertEquals(10, result);
 	}
 
@@ -1089,14 +1093,14 @@ public class CodeGenTests {
 				VAR x = 5;
 				FUN a(): INT
 				DO
-				   LET y:INT = 4 DO RETURN x+y; END
+				   LET y:INT = 40 DO RETURN x+y; END
 				END
 				""";
 		byte[] bytecode = compile(input, className, packageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
 		Object[] params = {};
 		int result = (int) loadClassAndRunMethod(bytecode, className, "a", params);
-		assertEquals(9, result);
+		assertEquals(45, result);
 	}
 
 	@DisplayName("let1")
@@ -1105,7 +1109,7 @@ public class CodeGenTests {
 		String input = """
 				FUN a(): INT
 				DO
-				   LET y:INT = 4 DO LET x = 96 DO RETURN x+y; END END
+				   LET y : INT = 4 DO LET x = 96 DO RETURN x+y; END END
 				END
 				""";
 		byte[] bytecode = compile(input, className, packageName);
@@ -1217,6 +1221,23 @@ public class CodeGenTests {
 		Object[] params = { true };
 		boolean result = (boolean) loadClassAndRunMethod(bytecode, className, "a", params);
 		assertEquals(false, result);
+	}
+	
+	@DisplayName("paramMinus")
+	@Test
+	public void paramMinus(TestInfo testInfo) throws Exception {
+		String input = """
+				FUN a(b:INT): INT
+				DO
+				  b = -b;
+				  RETURN b;
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = { 1 };
+		int result = (int) loadClassAndRunMethod(bytecode, className, "a", params);
+		assertEquals(-1, result);
 	}
 
 	@DisplayName("funcCallExpr0")

@@ -8,6 +8,6 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="lib" path="/Users/weinalyu/Dropbox/aTextbook/A_PLP/COP5556FA2021/asm-util-9.2.jar"/>
-	<classpathentry kind="lib" path="/Users/weinalyu/Dropbox/aTextbook/A_PLP/COP5556FA2021/asm-9.2.jar"/>
+	<classpathentry kind="lib" path="/Users/weinalyu/Dropbox/aTextbook/A_PLP/COP5556FA2021/asm-9.2.jar" sourcepath="/Users/weinalyu/Dropbox/aTextbook/A_PLP/COP5556FA2021/asm-9.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
