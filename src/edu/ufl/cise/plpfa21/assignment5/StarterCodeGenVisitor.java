@@ -105,13 +105,14 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 			Label range0 = varInfo.start == null ? start : varInfo.start;
 		    Label range1 = varInfo.end == null ? end : varInfo.end;
 		    show(varName + " " + localVarDesc + " " + range0 + " " + range1 + " SLOT -> " + slot);
-		    mv.visitLocalVariable(varName, localVarDesc, null, range0, range1, slot);
+//		    mv.visitLocalVariable(varName, localVarDesc, null, range0, range1, slot);
 		}
 	}
 
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
 		show("-------visiting binary expression--------");
+		show(n);
 		MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv;
 		n.getLeft().visit(this, arg);
 		n.getRight().visit(this, arg);
@@ -125,6 +126,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitInsn(IAND);
 		}
 		else if (op == Kind.EQUALS) {
+			n.setType(PrimitiveType__.booleanType);
 			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
 				mv.visitJumpInsn(IF_ICMPEQ, trueLabel);
 				mv.visitLdcInsn(false);
@@ -208,7 +210,9 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 			}
 		}
 		else if (op == Kind.TIMES) {
+			n.setType(n.getLeft().getType());
 			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
+				show(n.getLeft().getType() + " --- " + n.getRight().getType());
 				mv.visitInsn(IMUL);
 			}
 			else {
@@ -216,6 +220,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 			}
 		}
 		else if (op == Kind.DIV) {
+			n.setType(n.getLeft().getType());
 			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
 				mv.visitInsn(IDIV);
 			}
@@ -223,6 +228,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				throw new UnsupportedOperationException("Div Operation Not Supported for " + n.getLeft().getType() + " " + n.getRight().getType());
 			}
 		}
+		show("------left binary expression--------");
 		return null;
 	}
 
@@ -350,6 +356,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		for (IDeclaration dec : decs) {
 			dec.visit(this, clinitArg);  //argument contains local variable info and the method visitor.  
 		}
+		show("Finished Visiting All IDeclaration");
 		//add a return method
 		clmv.visitInsn(RETURN);
 		//mark the end of the bytecode for <clinit>
@@ -451,7 +458,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		for (IExpression e: n.getArgs()) {
 			e.visit(this, arg);
 		}
-		show(methodDesc.get(n.getName().getName()));
+		show("method Descrition -> " + methodDesc.get(n.getName().getName()));
 		mv.visitMethodInsn(INVOKESTATIC, className, n.getName().getName(), methodDesc.get(n.getName().getName()));
 		return null;
 	}
@@ -510,6 +517,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		if (e != null) {  //the return statement has an expression
 			e.visit(this, arg);  //generate code to leave value of expression on top of stack.
 			//use type of expression to determine which return instruction to use
+			show(e);
 			IType type = e.getType();
 			if (type.isInt() || type.isBoolean()) { mv.visitInsn(IRETURN); }
 			else  {mv.visitInsn(ARETURN);}
@@ -517,6 +525,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		else { //there is no argument, (and we have verified duirng type checking that function has void return type) so use this return statement.  
 			mv.visitInsn(RETURN);
 		}
+		show("Finished Visit Return Statement -> " + n);
 		return null;
 	}
 

@@ -44,7 +44,7 @@ import edu.ufl.cise.plpfa21.assignment4.SymbolTable.SymbolTableEntry;
 
 public class TypeCheckVisitor implements ASTVisitor {
 	
-	private static final boolean VERBOSE = false;
+	private static final boolean VERBOSE = true;
 
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
@@ -169,6 +169,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIFunctionCallExpression(IFunctionCallExpression n, Object arg) throws Exception {
 		IIdentifier name = n.getName();
+		show(name);
 		IDeclaration dec = (IDeclaration) name.visit(this, null);
 		check(dec instanceof IFunctionDeclaration, n, name.getName() + " is not declared or is not a function");
 		IFunctionDeclaration fdec = (IFunctionDeclaration) dec;
@@ -214,11 +215,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIdentifier(IIdentifier n, Object arg) throws Exception {
+		show("visitIIdentifier");
 
 		String name = n.getName();
 
 		IDeclaration dec = symtab.lookupDec(name);
-		show("IDeclaration dec = " + dec);
+		show("IDeclaration dec = " + name + " " + dec);
 
 		check(dec != null, n, "identifier not declared");
 		return dec;

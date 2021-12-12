@@ -1283,8 +1283,141 @@ public class CodeGenTests {
 		runMethod(testClass, "main", params);
 		assertEquals(5, getInt(testClass, "y"));
 	}
-
-
-
-
+	
+	@DisplayName("Lin_Huang_test0")
+	@Test
+	public void Lin_Huang_test0(TestInfo testInfo) throws Exception {
+		// RECURSIVE CALL: SUM UP FROM 1...5
+		String input = """
+				VAR i = 5;
+				VAR ans: INT;
+				FUN sum(n: INT): INT
+				DO
+					IF n==1 || n==0 DO RETURN n; END
+					RETURN n + sum(n-1);
+				END
+				FUN main()
+				DO
+				   ans = sum(i);
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = {};
+		Class<?> testClass = getClass(bytecode, className);
+		runMethod(testClass, "main", params);
+		assertEquals(15, getInt(testClass, "ans"));
+	}
+	
+	@DisplayName("Lin_Huang_test1")
+	@Test
+	public void Lin_Huang_test1(TestInfo testInfo) throws Exception {
+		// SUM OF FACTORIALS
+		String input = """
+				VAR ans = 0;
+				FUN factorial(x: INT): INT
+				DO
+					IF x==1 || x==0 DO RETURN 1; END
+					RETURN x * factorial(x-1);
+				END
+				FUN sumOfFactorial(n: INT)
+				DO
+					LET i: INT = n DO
+						WHILE i > 0 DO
+							ans = ans + factorial(i);
+							i = i-1;
+						END	
+					END			
+				END
+				FUN main()
+				DO
+				   sumOfFactorial(3);
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = {};
+		Class<?> testClass = getClass(bytecode, className);
+		runMethod(testClass, "main", params);
+		assertEquals(9, getInt(testClass, "ans"));
+	}
+	
+	@DisplayName("Lin_Huang_test2")
+	@Test
+	public void Lin_Huang_test2(TestInfo testInfo) throws Exception {
+		// CHECK IF STRING EQUALS "HELLO" OR "HELL NO" OR START WITH HELL
+		String input = """
+				VAR ans : BOOLEAN;
+				FUN main()
+				DO
+					LET str: STRING = "HELLO KITTY" DO
+						ans = (str == "HELLO") || (str == "HELL NO") || (str > "HELL") ;
+					END
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = {};
+		Class<?> testClass = getClass(bytecode, className);
+		runMethod(testClass, "main", params);
+		assertEquals(true, getBoolean(testClass, "ans"));
+	}
+	
+	@DisplayName("Lin_Huang_test3")
+	@Test
+	public void Lin_Huang_test3(TestInfo testInfo) throws Exception {
+		// CALCULATE GREATEST COMMON DIVISOR
+		String input = """
+				VAR ans : INT;
+				FUN gcd(a: INT, b: INT): INT
+				DO
+					IF b==0 DO RETURN a; END
+					RETURN gcd(b, a - (a/b)*b); 
+				END
+				
+				FUN main()
+				DO
+					ans = gcd(55, 121);
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = {};
+		Class<?> testClass = getClass(bytecode, className);
+		runMethod(testClass, "main", params);
+		assertEquals(11, getInt(testClass, "ans"));
+	}
+	
+	@DisplayName("Lin_Huang_test4")
+	@Test
+	public void Lin_Huang_test4(TestInfo testInfo) throws Exception {
+		// CALCULATE LEAST COMMON MULTIPLE
+		String input = """
+				VAR ans : INT;
+				FUN gcd(a: INT, b: INT): INT
+				DO
+					IF b==0 DO RETURN a; END
+					RETURN gcd(b, a - (a/b)*b); 
+				END
+				
+				FUN lcm(x: INT, y: INT): INT
+				DO
+					IF x == 0 || y == 0 DO RETURN 0; END
+					RETURN x*y/gcd(x,y);
+				END
+				
+				FUN main()
+				DO
+					ans = lcm(12, 18);
+				END
+				""";
+		byte[] bytecode = compile(input, className, packageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+		Object[] params = {};
+		Class<?> testClass = getClass(bytecode, className);
+		runMethod(testClass, "main", params);
+		assertEquals(36, getInt(testClass, "ans"));
+	}
+	
+	
 }

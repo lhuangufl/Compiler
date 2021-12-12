@@ -66,7 +66,7 @@ public class CompilerComponentFactory {
 	static final char EOFchar = 0;
 
 	//********************************
-	static boolean doPrint = false;
+	static boolean doPrint = true;
 	@SuppressWarnings("unused")
 	private static void show(Object input) {
         if(doPrint) {
