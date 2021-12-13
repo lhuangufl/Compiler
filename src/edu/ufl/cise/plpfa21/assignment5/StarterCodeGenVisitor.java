@@ -120,14 +120,18 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		Label endLabel = new Label();
 		Kind op = n.getOp();
 		if (op == Kind.OR) {
+			n.setType(PrimitiveType__.booleanType);
 			mv.visitInsn(IOR);
 		}
 		else if (op == Kind.AND) {
+			n.setType(PrimitiveType__.booleanType);
 			mv.visitInsn(IAND);
 		}
 		else if (op == Kind.EQUALS) {
 			n.setType(PrimitiveType__.booleanType);
-			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
+			if (n.getLeft().getType().isInt() && n.getRight().getType().isInt() 
+					|| n.getLeft().getType().isBoolean() && n.getRight().getType().isBoolean()) {
+				show(n.getLeft().getType() + " " + n + " " + n.getRight().getType());
 				mv.visitJumpInsn(IF_ICMPEQ, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -135,7 +139,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
-			else {
+			else if (n.getLeft().getType().isString() && n.getRight().getType().isString()) {
 				mv.visitJumpInsn(IF_ACMPEQ, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -143,9 +147,14 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
+			else {
+				throw new UnsupportedOperationException("EQUALS Operation Not Supported for " + n.getLeft().getType() + " " + n.getRight().getType());
+			}
 		}
 		else if (op == Kind.NOT_EQUALS) {
-			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
+			n.setType(PrimitiveType__.booleanType);
+			if (n.getLeft().getType().isInt() && n.getRight().getType().isInt() 
+					|| n.getLeft().getType().isBoolean() && n.getRight().getType().isBoolean()) {
 				mv.visitJumpInsn(IF_ICMPNE, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -153,7 +162,7 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
-			else {
+			else if (n.getLeft().getType().isString() && n.getRight().getType().isString()) {
 				mv.visitJumpInsn(IF_ACMPNE, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -161,9 +170,14 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
+			else {
+				throw new UnsupportedOperationException("NOT EQUALS Operation Not Supported for " + n.getLeft().getType() + " " + n.getRight().getType());
+			}
 		}
 		else if (op == Kind.LT) {
-			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
+			n.setType(PrimitiveType__.booleanType);
+			if (n.getLeft().getType().isInt() && n.getRight().getType().isInt() 
+					|| n.getLeft().getType().isBoolean() && n.getRight().getType().isBoolean()) {
 				mv.visitJumpInsn(IF_ICMPLT, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -171,13 +185,18 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
-			else {
+			else if (n.getLeft().getType().isString() && n.getRight().getType().isString()) {
 				mv.visitInsn(SWAP);
 				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);	
 			}
+			else {
+				throw new UnsupportedOperationException("LT Operation Not Supported for " + n.getLeft().getType() + " " + n.getRight().getType());
+			}
 		}
 		else if (op == Kind.GT) {
-			if (n.getLeft().getType().isInt() || n.getLeft().getType().isBoolean()) {
+			n.setType(PrimitiveType__.booleanType);
+			if (n.getLeft().getType().isInt() && n.getRight().getType().isInt() 
+					|| n.getLeft().getType().isBoolean() && n.getRight().getType().isBoolean()) {
 				mv.visitJumpInsn(IF_ICMPGT, trueLabel);
 				mv.visitLdcInsn(false);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -185,8 +204,11 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLdcInsn(true);
 				mv.visitLabel(endLabel);
 			}
-			else {
+			else if (n.getLeft().getType().isString() && n.getRight().getType().isString()) {
 				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
+			}
+			else {
+				throw new UnsupportedOperationException("GT Operation Not Supported for " + n.getLeft().getType() + " " + n.getRight().getType());
 			}
 		}
 

@@ -1,5 +1,7 @@
 package edu.ufl.cise.plpfa21.assignment4;
 
+import static org.hamcrest.CoreMatchers.nullValue;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -83,11 +85,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 		IType rightExpressionType = (IType) rightExpression.visit(this, arg);
 		show(leftExpressionType + " ------ leftExpressionType " );
 		show(rightExpressionType + " ---- rightExpressionType" );
-//		check(leftExpressionType.equals(rightExpressionType) || 
-//				leftExpressionType.equals(Type__.undefinedType), 
-//				n, "Left Expression Type doesn't match with Right one");
+		show(leftExpressionType.equals(rightExpressionType));
+		check(leftExpressionType.equals(rightExpressionType), n, n.getLeft().toString() + " Not Compatible With " + n.getRight().toString());
 
-		show("left equals right");
 		
 		Kind op = n.getOp();
 		show(op);
@@ -190,24 +190,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIdentExpression(IIdentExpression n, Object arg) throws Exception {
-//		show("@@@@@ visitIIdentExpression");
-//		show(symtab);
-//		IIdentifier name = n.getName();
-//		show("current scope @@" + symtab.currentScope + " |||  name @@ " + name.getName());
-//		check(symtab.entries.containsKey(name.getName()), n, "Identifier " + name + " is not declared yet");
-//		SymbolTableEntry entry = symtab.entries.get(name.getName());
-//		show("entry.scope ---> " + entry.scope);
-//		check(entry.scope == symtab.currentScope, n, name + " not defined in current scope");
-//		IDeclaration dec = (IDeclaration) name.visit(this, null);
-//		show("dec @@" + dec);
-//		IType type = getType(dec);
-//		show("type @@" + type);
-//		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
-//		n.setType(type);
-//		return type;
+		show("visitIIdentExpression -> " + n);
 		IIdentifier name = n.getName();
 		IDeclaration dec = (IDeclaration) name.visit(this, null);
+		show("dec ===> " + dec);
 		IType type = getType(dec);
+		show(name + " --- " + type);
 		check(type != Type__.undefinedType, n, "Identifier " + name + " does not have defined type");
 		n.setType(type);
 		return type;
@@ -220,8 +208,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 		String name = n.getName();
 
 		IDeclaration dec = symtab.lookupDec(name);
-		show("IDeclaration dec = " + name + " " + dec);
-
+		show("IDeclaration dec = " +  dec);
+		show(dec != null);
 		check(dec != null, n, "identifier not declared");
 		return dec;
 	}
@@ -266,7 +254,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 		//TODO
 		IExpression expression = n.getExpression();
 		IType expressionType = expression != null ? (IType) expression.visit(this, arg) : Type__.undefinedType;
-		show(" ---------------------- "  + n.getLocalDef().getIdent().getName());
+		show(" ---------------------- " + expressionType);
+		show(n.getLocalDef().getType() == null);
+		if (n.getLocalDef().getType() == null) n.getLocalDef().setType(expressionType);
 		n.getLocalDef().visit(this, n);
 		n.getBlock().visit(this, n);
 		return null;

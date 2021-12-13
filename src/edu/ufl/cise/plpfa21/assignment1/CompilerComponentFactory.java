@@ -6,7 +6,6 @@ import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
 import edu.ufl.cise.plpfa21.assignment4.ReferenceTypeCheckVisitor;
 
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -376,10 +375,9 @@ public class CompilerComponentFactory {
 			case KW_LET -> {
 				consume(); 
 				INameDef localDef = nameDef();
+				show("Local Def ******* " + localDef);
 				if (token.getKind()==Kind.ASSIGN) {
-					show("In Let Before Consume " + token.getText());
 					consume();
-					show("In Let After consume " + token.getText());
 					e0 = expression();
 					}
 				match(Kind.KW_DO);
@@ -644,14 +642,13 @@ public class CompilerComponentFactory {
 			} catch (SyntaxException e) {
 				throw e;
 			}
-			show("Before Everything" + token.getText());
 			if (token.getKind() == Kind.COLON) {
 				consume();
 				typeName = type(); 
 			} 
 			else if (token.getKind() == Kind.ASSIGN) {
 				Token tokenAfterNext = tokens.get(outputSeq);
-				show(tokenAfterNext.getText());
+				show("tokenAfterNext.getText() "+ tokenAfterNext.getText());
 				switch (tokenAfterNext.getKind()) {
 					case INT_LITERAL -> 
 					{ typeName = new PrimitiveType__(token.getLine(),token.getCharPositionInLine(),token.getText(),TypeKind.INT);}
@@ -660,11 +657,9 @@ public class CompilerComponentFactory {
 					case KW_TRUE,
 						KW_FALSE -> 
 					{ typeName = new PrimitiveType__(token.getLine(),token.getCharPositionInLine(),token.getText(),TypeKind.BOOLEAN);}
-					default -> new SyntaxException("Can't define Type of " + token.getText(), token.line, token.posInLine);
 				}
 			}
 			else throw new SyntaxException("Can't define Type of " + token.getText(), token.line, token.posInLine);
-			show("After Everything " + token.getText());
 			
 			return new NameDef__(
 					token.line,

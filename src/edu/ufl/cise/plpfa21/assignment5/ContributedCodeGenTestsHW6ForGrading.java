@@ -108,7 +108,7 @@ public class ContributedCodeGenTestsHW6ForGrading extends CodeGenTestsBaseHW6For
 		String input = """
 				FUN factorial(x:INT): INT
 				DO
-					LET y=x DO
+					LET y = x DO
 					x=x-1;
 				   WHILE x>0 DO
 				   		y=y*x;
@@ -1165,7 +1165,7 @@ public class ContributedCodeGenTestsHW6ForGrading extends CodeGenTestsBaseHW6For
                                 VAR x = !((3+2)*2==10 || !TRUE);
                                 """;
         		assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
-        			byte[] bytecode = compile(input, className, packageName);
+        		byte[] bytecode = compile(input, className, packageName);
                 show(CodeGenUtils.bytecodeToString(bytecode));
                 Class<?> testClass = getClass(bytecode, className);
                 assertEquals(false, getBoolean(testClass, "x"));
